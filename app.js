@@ -1,3 +1,32 @@
+// ─── CLEAN LOGGING PATCH ───
+const originalConsoleLog = console.log;
+const originalConsoleDebug = console.debug;
+const originalConsoleInfo = console.info;
+
+console.log = function(...args) {
+    const msg = args.join(' ');
+    // Filter out Discord debug slashes
+    if (
+        msg.includes('/') && 
+        (msg.includes('WebSocket') || 
+         msg.includes('heartbeat') || 
+         msg.includes('reconnect') ||
+         msg.includes('RESUMED') ||
+         msg.includes('READY') ||
+         msg.includes('session_id') ||
+         msg.includes('Gateway'))
+    ) {
+        return;
+    }
+    originalConsoleLog.apply(console, args);
+};
+
+console.debug = console.log;
+console.info = console.log;
+
+console.log('👑 RINTU SUITE - CLEAN LOGS ENABLED');
+
+// ─── REST OF YOUR APP.JS ───
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
@@ -6,15 +35,21 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 
+console.log('[RENDER] Starting RINTU DOMINATION SUITE...');
+console.log('[RENDER] Current directory:', __dirname);
+
 // ─── ULTRA STEALTH ANTI-DETECTION ───
 try {
     const ClientUserSettingManager = require("./node_modules/discord.js-selfbot-v13/src/managers/ClientUserSettingManager.js");
     if (ClientUserSettingManager?.prototype) {
         ClientUserSettingManager.prototype._patch = function(data) { return this; };
+        console.log('[RENDER] Anti-detection patched');
     }
-} catch (e) {}
+} catch (e) {
+    console.log('[RENDER] Anti-detection patch skipped:', e.message);
+}
 
-// ─── SUPER RANDOMIZED USER AGENTS ───
+// ─── USER AGENTS ───
 const userAgents = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
@@ -30,7 +65,7 @@ function getRandomUserAgent() { return userAgents[Math.floor(Math.random() * use
 function randomDelay(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
-// ─── ENCRYPTION FOR TOKENS ───
+// ─── ENCRYPTION ───
 const ENCRYPTION_KEY = crypto.randomBytes(32);
 const IV_LENGTH = 16;
 
@@ -53,7 +88,7 @@ function decryptToken(encryptedData) {
 }
 
 // ─── TOKEN STORAGE ───
-const TOKEN_FILE = 'tokens.enc';
+const TOKEN_FILE = path.join(__dirname, 'tokens.enc');
 let tokenStore = [];
 
 function loadTokensFromFile() {
@@ -65,9 +100,13 @@ function loadTokensFromFile() {
                 ...t,
                 token: decryptToken(t.token)
             }));
+            console.log('[RENDER] Loaded', tokenStore.length, 'tokens');
             return tokenStore;
+        } else {
+            console.log('[RENDER] No token file found, creating new');
+            fs.writeFileSync(TOKEN_FILE, JSON.stringify([]));
         }
-    } catch (e) { console.log('[TOKEN] Load error:', e.message); }
+    } catch (e) { console.log('[RENDER] Token load error:', e.message); }
     return [];
 }
 
@@ -78,8 +117,8 @@ function saveTokensToFile() {
             token: encryptToken(t.token)
         }));
         fs.writeFileSync(TOKEN_FILE, JSON.stringify(toSave, null, 2));
-        console.log('[TOKEN] Saved successfully');
-    } catch (e) { console.log('[TOKEN] Save error:', e.message); }
+        console.log('[RENDER] Tokens saved');
+    } catch (e) { console.log('[RENDER] Token save error:', e.message); }
 }
 
 function addTokenToStore(token, owner = 'default', enabled = true) {
@@ -125,146 +164,29 @@ function getEnabledTokens() {
 // ─── LOAD TOKENS ───
 loadTokensFromFile();
 
-const { Client } = require("discord.js-selfbot-v13");
-const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, StreamType } = require("@discordjs/voice");
-const { spawn } = require("child_process");
-const youtubedl = require("youtube-dl-exec");
-const axios = require("axios");
-
-// ─── GLOBALS ───
-const clients = [];
-const connections = new Map();
-const players = new Map();
-const activeResources = new Map();
-const clientMap = new Map();
-let currentFFmpegProcess = null;
-let currentUrl = null;
-let currentTitle = "Unknown";
-let currentChannelId = null;
-let loopMode = false, isPaused = false, isBassboosted = false;
-let currentVolumeMultiplier = 1.0;
-let blastMode = false, blastVolume = 50.0;
-let pungiMode = false, pungiIntensity = 50.0;
-let superLoudMode = false, forceLoudMode = false;
-let dominationMode = false, dominationTarget = null, dominationInterval = null;
-let spamActive = false, spamInterval = null, spamMessages = [], spamChannelId = null, spamDelay = 5000;
-let isLoggedIn = false;
-let isBotStarting = false;
-
-// ─── STEALTH LOGIN ENGINE ───
-async function stealthLogin(token, index) {
-    try {
-        const profile = {
-            index,
-            userAgent: getRandomUserAgent(),
-            device: ['Windows', 'Macintosh', 'X11'][Math.floor(Math.random() * 3)],
-            browser: ['Chrome', 'Firefox', 'Safari'][Math.floor(Math.random() * 3)],
-            fingerprint: crypto.randomBytes(16).toString('hex'),
-            sessionId: crypto.randomBytes(8).toString('hex')
-        };
-
-        const client = new Client({
-            checkUpdate: false,
-            ws: {
-                properties: {
-                    $browser: profile.browser === 'Chrome' ? 'Discord Chrome' :
-                              profile.browser === 'Firefox' ? 'Discord Firefox' : 'Discord Safari',
-                    $device: profile.device,
-                    $os: profile.device === 'Windows' ? 'Windows' :
-                         profile.device === 'Macintosh' ? 'Mac OS X' : 'Linux'
-                }
-            }
-        });
-
-        client.on("ready", () => {
-            console.log(`[🤖 STEALTH] ${client.user?.tag || 'Unknown'} online (${index + 1}/${clients.length})`);
-            clientMap.set(token, client);
-            isLoggedIn = true;
-            io.emit('stats', { bots: clients.length, online: clients.filter(c => c?.user).length });
-        });
-
-        client.on("error", (err) => {
-            console.log(`[🤖 STEALTH] Bot ${index + 1} error: ${err.message}`);
-            setTimeout(() => {
-                if (!client.user) {
-                    console.log(`[🤖 STEALTH] Reconnecting ${index + 1}...`);
-                    client.login(token).catch(() => {});
-                }
-            }, randomDelay(5000, 15000));
-        });
-
-        client.on("rateLimit", (data) => {
-            console.log(`[⏳ RATE] Bot ${index + 1} rate limited, waiting...`);
-            setTimeout(() => {}, data.timeout || 5000);
-        });
-
-        await client.login(token);
-        clients.push(client);
-        return client;
-
-    } catch (err) {
-        console.log(`[🤖 STEALTH] Bot ${index + 1} login failed: ${err.message}`);
-        await sleep(randomDelay(3000, 8000));
-        if (getEnabledTokens().length > 0) {
-            return stealthLogin(token, index);
-        }
-        return null;
-    }
-}
-
-// ─── START ALL TOKENS ───
-async function startAllTokens() {
-    if (isBotStarting) return;
-    isBotStarting = true;
-    
-    const tokens = getEnabledTokens();
-    console.log(`[🚀 START] Launching ${tokens.length} stealth bots...`);
-    
-    clients.length = 0;
-    clientMap.clear();
-    
-    for (let i = 0; i < tokens.length; i++) {
-        const tokenData = tokens[i];
-        await stealthLogin(tokenData.token, i);
-        await sleep(randomDelay(1000, 4000));
-    }
-    
-    isBotStarting = false;
-    console.log(`[🚀 START] ${clients.length} bots online, ${clients.filter(c => c?.user).length} ready`);
-    io.emit('stats', { 
-        bots: clients.length, 
-        online: clients.filter(c => c?.user).length 
-    });
-}
-
-// ─── STOP ALL TOKENS ───
-async function stopAllTokens() {
-    console.log('[🛑 STOP] Shutting down all bots...');
-    for (const client of clients) {
-        try {
-            if (client) await client.destroy();
-        } catch (e) {}
-    }
-    clients.length = 0;
-    clientMap.clear();
-    connections.clear();
-    players.clear();
-    activeResources.clear();
-    isLoggedIn = false;
-    io.emit('stats', { bots: 0, online: 0 });
-    console.log('[🛑 STOP] All bots offline');
-}
-
 // ─── EXPRESS SETUP ───
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
-    cors: { origin: "*" }
+    cors: { origin: "*" },
+    transports: ['websocket', 'polling']
 });
 
+console.log('[RENDER] Express setup starting...');
+
+// ─── VIEW ENGINE ───
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-app.use(express.static('public'));
+
+// ─── CHECK VIEWS FOLDER ───
+const viewsPath = path.join(__dirname, 'views');
+if (!fs.existsSync(viewsPath)) {
+    console.log('[RENDER] Creating views folder...');
+    fs.mkdirSync(viewsPath, { recursive: true });
+}
+
+// ─── STATIC FILES ───
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -279,17 +201,53 @@ function requireAuth(req, res, next) {
 
 // ─── ROUTES ───
 app.get('/', (req, res) => {
-    res.render('dashboard', { 
-        botCount: clients.length,
-        onlineCount: clients.filter(c => c?.user).length,
-        domination: dominationMode,
-        spam: spamActive,
-        volume: Math.round(currentVolumeMultiplier * 100),
-        connected: connections.size,
-        tokenCount: tokenStore.length,
-        enabledCount: getEnabledTokens().length,
-        loggedIn: adminSession
+    console.log('[RENDER] Serving dashboard');
+    try {
+        res.render('dashboard', { 
+            botCount: clients.length || 0,
+            onlineCount: clients.filter(c => c?.user).length || 0,
+            domination: dominationMode || false,
+            spam: spamActive || false,
+            volume: Math.round(currentVolumeMultiplier * 100) || 100,
+            connected: connections.size || 0,
+            tokenCount: tokenStore.length || 0,
+            enabledCount: getEnabledTokens().length || 0,
+            loggedIn: adminSession || false
+        });
+    } catch (err) {
+        console.log('[RENDER] Render error:', err.message);
+        res.send(`
+            <html><body style="background:#0a0a0a;color:#00ff41;font-family:monospace;padding:40px;">
+                <h1 style="color:#ff0040;">⚠️ RENDER ERROR</h1>
+                <p>${err.message}</p>
+                <p>Check your views/dashboard.ejs file exists!</p>
+            </body></html>
+        `);
+    }
+});
+
+// ─── TEST ROUTE ───
+app.get('/ping', (req, res) => {
+    res.json({ 
+        status: 'alive', 
+        time: new Date().toISOString(),
+        tokens: tokenStore.length,
+        bots: clients.length
     });
+});
+
+app.get('/test', (req, res) => {
+    res.send(`
+        <html>
+            <body style="background:#0a0a0a;color:#00ff41;font-family:monospace;padding:40px;">
+                <h1 style="color:#ff0040;">👑 RINTU SUITE IS ALIVE!</h1>
+                <p>Tokens: ${tokenStore.length}</p>
+                <p>Bots: ${clients.length}</p>
+                <p>Time: ${new Date().toISOString()}</p>
+                <p><a href="/" style="color:#00ff41;">Go to Dashboard →</a></p>
+            </body>
+        </html>
+    `);
 });
 
 app.post('/api/login', (req, res) => {
@@ -350,7 +308,7 @@ app.post('/api/tokens/refresh', requireAuth, async (req, res) => {
     res.json({ success: true });
 });
 
-// ─── STEALTH COMMANDS API ───
+// ─── COMMANDS API ───
 app.post('/api/domination/start', requireAuth, async (req, res) => {
     const { channelId } = req.body;
     if (!channelId) return res.status(400).json({ error: 'Channel ID required' });
@@ -456,20 +414,20 @@ app.post('/api/volume', requireAuth, (req, res) => {
 
 app.get('/api/stats', requireAuth, (req, res) => {
     res.json({
-        bots: clients.length,
-        online: clients.filter(c => c?.user).length,
-        connected: connections.size,
-        domination: dominationMode,
-        spam: spamActive,
-        volume: Math.round(currentVolumeMultiplier * 100),
-        loop: loopMode,
-        paused: isPaused,
-        bassboost: isBassboosted,
-        blast: blastMode,
-        pungi: pungiMode,
-        currentTrack: currentTitle,
-        tokenCount: tokenStore.length,
-        enabledCount: getEnabledTokens().length
+        bots: clients.length || 0,
+        online: clients.filter(c => c?.user).length || 0,
+        connected: connections.size || 0,
+        domination: dominationMode || false,
+        spam: spamActive || false,
+        volume: Math.round(currentVolumeMultiplier * 100) || 100,
+        loop: loopMode || false,
+        paused: isPaused || false,
+        bassboost: isBassboosted || false,
+        blast: blastMode || false,
+        pungi: pungiMode || false,
+        currentTrack: currentTitle || 'None',
+        tokenCount: tokenStore.length || 0,
+        enabledCount: getEnabledTokens().length || 0
     });
 });
 
@@ -477,20 +435,148 @@ app.get('/api/stats', requireAuth, (req, res) => {
 io.on('connection', (socket) => {
     console.log('[SOCKET] Client connected');
     socket.emit('stats', {
-        bots: clients.length,
-        online: clients.filter(c => c?.user).length,
-        connected: connections.size,
-        domination: dominationMode,
-        spam: spamActive,
-        volume: Math.round(currentVolumeMultiplier * 100),
-        currentTrack: currentTitle,
-        tokenCount: tokenStore.length
+        bots: clients.length || 0,
+        online: clients.filter(c => c?.user).length || 0,
+        connected: connections.size || 0,
+        domination: dominationMode || false,
+        spam: spamActive || false,
+        volume: Math.round(currentVolumeMultiplier * 100) || 100,
+        currentTrack: currentTitle || 'None',
+        tokenCount: tokenStore.length || 0
     });
 });
 
-// ─── STEALTH COMMAND IMPLEMENTATIONS ───
+// ─── DISCORD BOT IMPORTS ───
+const { Client } = require("discord.js-selfbot-v13");
+const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, StreamType } = require("@discordjs/voice");
+const { spawn } = require("child_process");
+const youtubedl = require("youtube-dl-exec");
+const axios = require("axios");
 
-// --- STEALTH SJOIN ---
+// ─── GLOBALS ───
+const clients = [];
+const connections = new Map();
+const players = new Map();
+const activeResources = new Map();
+const clientMap = new Map();
+let currentFFmpegProcess = null;
+let currentUrl = null;
+let currentTitle = "Unknown";
+let currentChannelId = null;
+let loopMode = false, isPaused = false, isBassboosted = false;
+let currentVolumeMultiplier = 1.0;
+let blastMode = false, blastVolume = 50.0;
+let pungiMode = false, pungiIntensity = 50.0;
+let superLoudMode = false, forceLoudMode = false;
+let dominationMode = false, dominationTarget = null, dominationInterval = null;
+let spamActive = false, spamInterval = null, spamMessages = [], spamChannelId = null, spamDelay = 5000;
+let isLoggedIn = false;
+let isBotStarting = false;
+
+// ─── STEALTH LOGIN ───
+async function stealthLogin(token, index) {
+    try {
+        const profile = {
+            index,
+            userAgent: getRandomUserAgent(),
+            device: ['Windows', 'Macintosh', 'X11'][Math.floor(Math.random() * 3)],
+            browser: ['Chrome', 'Firefox', 'Safari'][Math.floor(Math.random() * 3)],
+            fingerprint: crypto.randomBytes(16).toString('hex'),
+            sessionId: crypto.randomBytes(8).toString('hex')
+        };
+
+        const client = new Client({
+            checkUpdate: false,
+            ws: {
+                properties: {
+                    $browser: profile.browser === 'Chrome' ? 'Discord Chrome' :
+                              profile.browser === 'Firefox' ? 'Discord Firefox' : 'Discord Safari',
+                    $device: profile.device,
+                    $os: profile.device === 'Windows' ? 'Windows' :
+                         profile.device === 'Macintosh' ? 'Mac OS X' : 'Linux'
+                }
+            }
+        });
+
+        client.on("ready", () => {
+            console.log(`[🤖 STEALTH] ${client.user?.tag || 'Unknown'} online (${index + 1}/${clients.length})`);
+            clientMap.set(token, client);
+            isLoggedIn = true;
+            io.emit('stats', { bots: clients.length, online: clients.filter(c => c?.user).length });
+        });
+
+        client.on("error", (err) => {
+            console.log(`[🤖 STEALTH] Bot ${index + 1} error: ${err.message}`);
+            setTimeout(() => {
+                if (!client.user) {
+                    console.log(`[🤖 STEALTH] Reconnecting ${index + 1}...`);
+                    client.login(token).catch(() => {});
+                }
+            }, randomDelay(5000, 15000));
+        });
+
+        client.on("rateLimit", (data) => {
+            // Silently handle rate limits
+        });
+
+        await client.login(token);
+        clients.push(client);
+        return client;
+
+    } catch (err) {
+        console.log(`[🤖 STEALTH] Bot ${index + 1} login failed: ${err.message}`);
+        await sleep(randomDelay(3000, 8000));
+        if (getEnabledTokens().length > 0) {
+            return stealthLogin(token, index);
+        }
+        return null;
+    }
+}
+
+// ─── START ALL TOKENS ───
+async function startAllTokens() {
+    if (isBotStarting) return;
+    isBotStarting = true;
+    
+    const tokens = getEnabledTokens();
+    console.log(`[🚀 START] Launching ${tokens.length} stealth bots...`);
+    
+    clients.length = 0;
+    clientMap.clear();
+    
+    for (let i = 0; i < tokens.length; i++) {
+        const tokenData = tokens[i];
+        await stealthLogin(tokenData.token, i);
+        await sleep(randomDelay(1000, 4000));
+    }
+    
+    isBotStarting = false;
+    console.log(`[🚀 START] ${clients.length} bots online`);
+    io.emit('stats', { 
+        bots: clients.length, 
+        online: clients.filter(c => c?.user).length 
+    });
+}
+
+// ─── STOP ALL TOKENS ───
+async function stopAllTokens() {
+    console.log('[🛑 STOP] Shutting down all bots...');
+    for (const client of clients) {
+        try {
+            if (client) await client.destroy();
+        } catch (e) {}
+    }
+    clients.length = 0;
+    clientMap.clear();
+    connections.clear();
+    players.clear();
+    activeResources.clear();
+    isLoggedIn = false;
+    io.emit('stats', { bots: 0, online: 0 });
+    console.log('[🛑 STOP] All bots offline');
+}
+
+// ─── STEALTH COMMANDS ───
 async function stealthSjoin(inviteInput) {
     console.log(`\n[🔗 STEALTH SJOIN] Joining ${clients.length} bots...`);
     let inviteCode = inviteInput;
@@ -550,7 +636,6 @@ async function stealthSjoin(inviteInput) {
     io.emit('command_result', { command: 'sjoin', result: `${success}/${clients.length} joined` });
 }
 
-// --- STEALTH SLEAVE ---
 async function stealthSleave(serverId) {
     console.log(`\n[🚪 STEALTH SLEAVE] Leaving ${serverId}...`);
     let success = 0;
@@ -586,7 +671,6 @@ async function stealthSleave(serverId) {
     console.log(`\n[🚪 STEALTH SLEAVE] ✅ ${success}/${clients.length} left`);
 }
 
-// --- STEALTH SLEAVE ALL ---
 async function stealthSleaveAll() {
     console.log(`\n[🚪 STEALTH SLEAVE ALL] Leaving ALL servers...`);
     let total = 0;
@@ -613,7 +697,6 @@ async function stealthSleaveAll() {
     console.log(`\n[🚪 STEALTH SLEAVE ALL] ✅ Left ${total} servers total`);
 }
 
-// --- STEALTH NAME CHANGE ---
 async function stealthNameChange(newName) {
     console.log(`\n[📛 STEALTH NAME] Changing ${clients.length} bots to ${newName}`);
     let success = 0;
@@ -646,7 +729,6 @@ async function stealthNameChange(newName) {
     console.log(`\n[📛 STEALTH NAME] ✅ ${success}/${clients.length} changed`);
 }
 
-// --- STEALTH SEND ---
 async function stealthSend(channelId, message) {
     console.log(`\n[📨 STEALTH SEND] Sending to ${clients.length} bots`);
     let success = 0;
@@ -666,7 +748,6 @@ async function stealthSend(channelId, message) {
     console.log(`\n[📨 STEALTH SEND] ✅ ${success}/${clients.length} sent`);
 }
 
-// --- STEALTH PASSWORD BYPASS ---
 async function stealthPasswordBypass(channelId, targetUser, password) {
     console.log(`\n[🔓 STEALTH PASS] Bypassing for ${targetUser}`);
     let success = 0;
@@ -686,7 +767,6 @@ async function stealthPasswordBypass(channelId, targetUser, password) {
     console.log(`\n[🔓 STEALTH PASS] ✅ ${success}/${clients.length} sent`);
 }
 
-// --- STEALTH JOIN VC ---
 async function stealthJoinVC(channelId) {
     currentChannelId = channelId;
     console.log(`\n[🔊 STEALTH VC] Connecting ${clients.length} bots to ${channelId}`);
@@ -724,7 +804,6 @@ async function stealthJoinVC(channelId) {
     io.emit('stats', { connected: connections.size });
 }
 
-// --- STEALTH PLAY ---
 async function stealthPlay(url) {
     if (connections.size === 0) {
         console.log("[ERROR] Join a voice channel first");
@@ -758,7 +837,6 @@ async function stealthPlay(url) {
     io.emit('stats', { currentTrack: currentTitle });
 }
 
-// --- DOMINATION ---
 async function dominationTakeover(channelId) {
     if (dominationMode) return console.log("[DOMINATION] Already active!");
     dominationMode = true;
@@ -818,7 +896,6 @@ function stopDomination() {
     console.log(`[DOMINATION] ⚔️ Deactivated.`);
 }
 
-// --- SPAM ---
 async function spamCommand(channelId, messages, delay) {
     if (spamActive) return console.log("[SPAM] Already active!");
     spamChannelId = channelId;
@@ -902,7 +979,7 @@ function startFFmpegStream(inputSource) {
 
 // ─── START SERVER ───
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, async () => {
+server.listen(PORT, '0.0.0.0', async () => {
     console.log(`
 ╔══════════════════════════════════════════════════════════════╗
 ║        👑 RINTU DOMINATION SUITE 👑                        ║
@@ -915,6 +992,7 @@ server.listen(PORT, async () => {
 ║  🔑 Admin Pass: ${process.env.ADMIN_PASS || 'SET_IN_ENV'}  ║
 ║  📋 Login to access all features                           ║
 ║  🔗 All commands are UNDETECTABLE!                         ║
+║  🧹 Discord debug slashes: FILTERED                        ║
 ╚══════════════════════════════════════════════════════════════╝
     `);
     
