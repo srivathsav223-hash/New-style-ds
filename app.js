@@ -107,20 +107,17 @@ function validateKey(key) {
 loadTokens();
 loadKeys();
 
-// ─── LOAD SELFBOT MODULES SAFELY ───
+// ─── LOAD SELFBOT MODULES ───
 let Client, joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, StreamType;
 let youtubedl, axios;
 let selfbotLoaded = false;
 
 try {
     console.log('[BOOT] Loading Discord modules...');
-    
-    // Load discord.js-selfbot-v13
     const discord = require('discord.js-selfbot-v13');
     Client = discord.Client;
     console.log('[BOOT] ✅ discord.js-selfbot-v13 loaded');
     
-    // Load @discordjs/voice
     const voice = require('@discordjs/voice');
     joinVoiceChannel = voice.joinVoiceChannel;
     createAudioPlayer = voice.createAudioPlayer;
@@ -129,16 +126,14 @@ try {
     StreamType = voice.StreamType;
     console.log('[BOOT] ✅ @discordjs/voice loaded');
     
-    // Load youtube-dl-exec
     youtubedl = require('youtube-dl-exec');
     axios = require('axios');
     console.log('[BOOT] ✅ youtube-dl-exec loaded');
     
     selfbotLoaded = true;
-    console.log('[BOOT] ✅ ALL MODULES LOADED SUCCESSFULLY!');
+    console.log('[BOOT] ✅ ALL MODULES LOADED!');
 } catch (e) {
-    console.log('[BOOT] ⚠️ Module load error:', e.message);
-    console.log('[BOOT] ⚠️ Selfbot features will be disabled');
+    console.log('[BOOT] ⚠️ Module error:', e.message);
     selfbotLoaded = false;
 }
 
@@ -194,13 +189,7 @@ app.get('/', (req, res) => {
             selfbotLoaded: selfbotLoaded
         });
     } catch (err) {
-        res.send(`
-            <html><body style="background:#0a0a0a;color:#00ff41;font-family:monospace;padding:40px;">
-                <h1 style="color:#ff0040;">👑 RINTU SUITE</h1>
-                <p>✅ Server running!</p>
-                <p><a href="/test" style="color:#00ff41;">Test Route</a></p>
-            </body></html>
-        `);
+        res.send(`<h1 style="color:#ff0040;">👑 RINTU SUITE</h1><p>✅ Running! Error: ${err.message}</p>`);
     }
 });
 
@@ -313,7 +302,7 @@ app.post('/api/keys/delete', (req, res) => {
     res.json({ success: true });
 });
 
-// ─── SELFBOT COMMANDS ───
+// ─── COMMANDS ───
 app.post('/api/joinvc', async (req, res) => {
     if (!admin) return res.status(401).json({ error: 'Unauthorized' });
     if (!selfbotLoaded) return res.status(400).json({ error: 'Selfbot not loaded' });
@@ -548,7 +537,6 @@ async function joinVoiceChannel(channelId) {
             connections.set(i, conn);
             players.set(i, player);
             connected++;
-            console.log('[VC] Bot', i+1, 'joined');
         } catch (e) {
             console.log('[VC] Error:', e.message);
         }
@@ -825,7 +813,7 @@ function stopFFmpeg() {
     }
 }
 
-// ─── START SERVER ───
+// ─── START ───
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`
