@@ -1,10 +1,10 @@
 {
   "name": "rintu-suite",
   "version": "8.0.0",
-  "description": "RINTU SUITE - FULL WORKING",
+  "description": "RINTU SUITE - WORKING",
   "main": "app.js",
   "engines": {
-    "node": "18.x"
+    "node": "16.x"
   },
   "scripts": {
     "start": "node app.js"
