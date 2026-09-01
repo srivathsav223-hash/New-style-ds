@@ -1,14 +1,12 @@
 {
   "name": "rintu-domination-suite",
   "version": "6.0.0",
-  "description": "RINTU ULTIMATE DOMINATION SUITE - Undetectable Discord Selfbot with Dashboard",
+  "description": "RINTU ULTIMATE DOMINATION SUITE",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "build": "npm install"
   },
-  "author": "RINTU",
-  "license": "UNLICENSED",
   "dependencies": {
     "discord.js-selfbot-v13": "^3.5.1",
     "@discordjs/voice": "^0.16.0",
@@ -21,8 +19,5 @@
     "fs": "^0.0.1-security",
     "child_process": "^1.0.2",
     "crypto": "^1.0.1"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.1"
   }
 }
