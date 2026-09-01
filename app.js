@@ -38,7 +38,7 @@ process.stdout.write = function(buffer, ...args) {
 };
 
 console.log('💀 NUCLEAR SLASH KILLER ACTIVATED');
-console.log('👑 RINTU SUITE - CLEAN MODE');
+console.log('👑 RINTU SUITE - SELFBOT MODE');
 
 // ─── IMPORTS ───
 require('dotenv').config();
@@ -49,14 +49,14 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 
-console.log('[RENDER] Starting RINTU DOMINATION SUITE...');
+console.log('[RENDER] Starting RINTU SELFBOT SUITE...');
 
-// ─── ANTI-DETECTION ───
+// ─── ANTI-DETECTION FOR SELFBOT ───
 try {
     const ClientUserSettingManager = require("./node_modules/discord.js-selfbot-v13/src/managers/ClientUserSettingManager.js");
     if (ClientUserSettingManager?.prototype) {
         ClientUserSettingManager.prototype._patch = function(data) { return this; };
-        console.log('[RENDER] Anti-detection patched');
+        console.log('[RENDER] Selfbot anti-detection patched');
     }
 } catch (e) {}
 
@@ -67,9 +67,7 @@ const userAgents = [
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15',
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36 Edg/117.0.2045.47'
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0'
 ];
 
 function getRandomUserAgent() { return userAgents[Math.floor(Math.random() * userAgents.length)]; }
@@ -112,7 +110,7 @@ function loadTokensFromFile() {
                 ...t,
                 token: decryptToken(t.token)
             }));
-            console.log('[RENDER] Loaded', tokenStore.length, 'tokens');
+            console.log('[RENDER] Loaded', tokenStore.length, 'user tokens');
             return tokenStore;
         } else {
             console.log('[RENDER] No token file found, creating new');
@@ -208,14 +206,6 @@ function generateKey(owner, days) {
     return keyData;
 }
 
-function validateKey(key) {
-    const found = keysStore.find(k => k.key === key);
-    if (!found) return { valid: false, error: 'Invalid key' };
-    const expired = new Date(found.expires) < new Date();
-    if (expired) return { valid: false, error: 'Key expired' };
-    return { valid: true, owner: found.owner, expires: found.expires };
-}
-
 loadTokensFromFile();
 loadKeysFromFile();
 
@@ -285,7 +275,7 @@ app.get('/test', (req, res) => {
                 <h1 style="color:#ff0040;">👑 RINTU SUITE IS ALIVE!</h1>
                 <p>✅ Server running on port ${process.env.PORT || 3000}</p>
                 <p>📦 Tokens: ${tokenStore.length}</p>
-                <p>🤖 Bots: ${clients.length}</p>
+                <p>🤖 Bots Online: ${clients.filter(c => c?.user).length}</p>
                 <p>🔑 Keys: ${keysStore.length}</p>
                 <p><a href="/" style="color:#00ff41;">Go to Dashboard →</a></p>
             </body>
@@ -298,7 +288,7 @@ app.get('/ping', (req, res) => {
         status: 'alive', 
         time: new Date().toISOString(),
         tokens: tokenStore.length,
-        bots: clients.length,
+        bots: clients.filter(c => c?.user).length,
         keys: keysStore.length
     });
 });
@@ -326,6 +316,9 @@ app.get('/api/tokens', requireAuth, (req, res) => {
 app.post('/api/tokens/add', requireAuth, (req, res) => {
     const { token, owner } = req.body;
     if (!token) return res.status(400).json({ error: 'Token required' });
+    if (!token.startsWith('MT') && !token.startsWith('ND') && token.length < 50) {
+        return res.status(400).json({ error: 'Invalid user token format' });
+    }
     const added = addTokenToStore(token, owner || 'default');
     res.json({ success: true, token: added });
 });
@@ -345,16 +338,19 @@ app.post('/api/tokens/toggle', requireAuth, (req, res) => {
 });
 
 app.post('/api/tokens/start', requireAuth, async (req, res) => {
+    console.log('[API] Starting all user tokens...');
     await startAllTokens();
     res.json({ success: true });
 });
 
 app.post('/api/tokens/stop', requireAuth, async (req, res) => {
+    console.log('[API] Stopping all user tokens...');
     await stopAllTokens();
     res.json({ success: true });
 });
 
 app.post('/api/tokens/refresh', requireAuth, async (req, res) => {
+    console.log('[API] Refreshing tokens...');
     await stopAllTokens();
     await sleep(2000);
     await startAllTokens();
@@ -401,23 +397,17 @@ app.post('/api/keys/validate', (req, res) => {
     res.json(result);
 });
 
-app.post('/api/keys/delete', requireAuth, (req, res) => {
-    const { key } = req.body;
-    if (!key) return res.status(400).json({ error: 'Key required' });
-    keysStore = keysStore.filter(k => k.key !== key);
-    saveKeysToFile();
-    res.json({ success: true });
-});
-
 // ─── COMMANDS ───
 app.post('/api/domination/start', requireAuth, async (req, res) => {
     const { channelId } = req.body;
     if (!channelId) return res.status(400).json({ error: 'Channel ID required' });
+    console.log('[API] Domination start on:', channelId);
     await dominationTakeover(channelId);
     res.json({ success: true });
 });
 
 app.post('/api/domination/stop', requireAuth, (req, res) => {
+    console.log('[API] Domination stop');
     stopDomination();
     res.json({ success: true });
 });
@@ -425,6 +415,7 @@ app.post('/api/domination/stop', requireAuth, (req, res) => {
 app.post('/api/sjoin', requireAuth, async (req, res) => {
     const { invite } = req.body;
     if (!invite) return res.status(400).json({ error: 'Invite required' });
+    console.log('[API] SJOIN:', invite);
     await stealthSjoin(invite);
     res.json({ success: true });
 });
@@ -432,11 +423,13 @@ app.post('/api/sjoin', requireAuth, async (req, res) => {
 app.post('/api/sleave', requireAuth, async (req, res) => {
     const { serverId } = req.body;
     if (!serverId) return res.status(400).json({ error: 'Server ID required' });
+    console.log('[API] SLEAVE:', serverId);
     await stealthSleave(serverId);
     res.json({ success: true });
 });
 
 app.post('/api/sleaveall', requireAuth, async (req, res) => {
+    console.log('[API] SLEAVE ALL');
     await stealthSleaveAll();
     res.json({ success: true });
 });
@@ -444,6 +437,7 @@ app.post('/api/sleaveall', requireAuth, async (req, res) => {
 app.post('/api/name', requireAuth, async (req, res) => {
     const { name } = req.body;
     if (!name) return res.status(400).json({ error: 'Name required' });
+    console.log('[API] NAME CHANGE:', name);
     await stealthNameChange(name);
     res.json({ success: true });
 });
@@ -452,11 +446,13 @@ app.post('/api/spam/start', requireAuth, async (req, res) => {
     const { channelId, messages, delay } = req.body;
     if (!channelId || !messages) return res.status(400).json({ error: 'Channel ID and messages required' });
     const msgArray = messages.split('|').map(m => m.trim());
+    console.log('[API] SPAM start:', channelId);
     await spamCommand(channelId, msgArray, parseInt(delay) || 3000);
     res.json({ success: true });
 });
 
 app.post('/api/spam/stop', requireAuth, (req, res) => {
+    console.log('[API] SPAM stop');
     stopSpamCommand();
     res.json({ success: true });
 });
@@ -464,6 +460,7 @@ app.post('/api/spam/stop', requireAuth, (req, res) => {
 app.post('/api/ssend', requireAuth, async (req, res) => {
     const { channelId, message } = req.body;
     if (!channelId || !message) return res.status(400).json({ error: 'Channel ID and message required' });
+    console.log('[API] SSEND:', channelId);
     await stealthSend(channelId, message);
     res.json({ success: true });
 });
@@ -471,6 +468,7 @@ app.post('/api/ssend', requireAuth, async (req, res) => {
 app.post('/api/password', requireAuth, async (req, res) => {
     const { channelId, target, password } = req.body;
     if (!channelId || !target) return res.status(400).json({ error: 'Channel ID and target required' });
+    console.log('[API] PASSWORD:', target);
     await stealthPasswordBypass(channelId, target, password || 'BYPASSED');
     res.json({ success: true });
 });
@@ -478,6 +476,7 @@ app.post('/api/password', requireAuth, async (req, res) => {
 app.post('/api/joinvc', requireAuth, async (req, res) => {
     const { channelId } = req.body;
     if (!channelId) return res.status(400).json({ error: 'Channel ID required' });
+    console.log('[API] JOIN VC:', channelId);
     await stealthJoinVC(channelId);
     res.json({ success: true });
 });
@@ -485,12 +484,14 @@ app.post('/api/joinvc', requireAuth, async (req, res) => {
 app.post('/api/play', requireAuth, async (req, res) => {
     const { url } = req.body;
     if (!url) return res.status(400).json({ error: 'URL required' });
+    console.log('[API] PLAY:', url);
     await stealthPlay(url);
     res.json({ success: true });
 });
 
 app.post('/api/control', requireAuth, (req, res) => {
     const { action } = req.body;
+    console.log('[API] CONTROL:', action);
     switch(action) {
         case 'pause': players.forEach(p => p.pause()); isPaused = true; break;
         case 'resume': players.forEach(p => p.unpause()); isPaused = false; break;
@@ -514,9 +515,11 @@ app.post('/api/volume', requireAuth, (req, res) => {
 });
 
 app.get('/api/stats', requireAuth, (req, res) => {
+    const online = clients.filter(c => c?.user).length;
+    console.log('[API] Stats - Bots:', clients.length, 'Online:', online);
     res.json({
         bots: clients.length || 0,
-        online: clients.filter(c => c?.user).length || 0,
+        online: online || 0,
         connected: connections.size || 0,
         domination: dominationMode || false,
         spam: spamActive || false,
@@ -549,7 +552,7 @@ io.on('connection', (socket) => {
     });
 });
 
-// ─── DISCORD IMPORTS ───
+// ─── DISCORD SELFBOT IMPORTS ───
 const { Client } = require("discord.js-selfbot-v13");
 const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, StreamType } = require("@discordjs/voice");
 const { spawn } = require("child_process");
@@ -576,9 +579,11 @@ let spamActive = false, spamInterval = null, spamMessages = [], spamChannelId = 
 let isLoggedIn = false;
 let isBotStarting = false;
 
-// ─── STEALTH LOGIN ───
+// ─── SELFBOT LOGIN ───
 async function stealthLogin(token, index) {
     try {
+        console.log(`[🤖 SELFBOT] Logging in user token ${index + 1}...`);
+        
         const profile = {
             index,
             userAgent: getRandomUserAgent(),
@@ -602,68 +607,82 @@ async function stealthLogin(token, index) {
         });
 
         client.on("ready", () => {
-            console.log(`[🤖 STEALTH] ${client.user?.tag || 'Unknown'} online (${index + 1}/${clients.length})`);
+            console.log(`[🤖 SELFBOT] ✅ ${client.user?.tag || 'Unknown'} online (${index + 1}/${clients.length})`);
             clientMap.set(token, client);
             isLoggedIn = true;
-            io.emit('stats', { bots: clients.length, online: clients.filter(c => c?.user).length });
+            io.emit('stats', { 
+                bots: clients.length, 
+                online: clients.filter(c => c?.user).length 
+            });
         });
 
         client.on("error", (err) => {
-            console.log(`[🤖 STEALTH] Bot ${index + 1} error: ${err.message}`);
-            setTimeout(() => {
-                if (!client.user) {
-                    console.log(`[🤖 STEALTH] Reconnecting ${index + 1}...`);
-                    client.login(token).catch(() => {});
-                }
-            }, randomDelay(5000, 15000));
+            console.log(`[🤖 SELFBOT] ❌ Bot ${index + 1} error: ${err.message}`);
         });
 
         client.on("rateLimit", (data) => {
-            // Silently handle rate limits
+            console.log(`[⏳ RATE] Bot ${index + 1} rate limited`);
         });
 
         await client.login(token);
         clients.push(client);
+        console.log(`[🤖 SELFBOT] Bot ${index + 1} login complete`);
         return client;
 
     } catch (err) {
-        console.log(`[🤖 STEALTH] Bot ${index + 1} login failed: ${err.message}`);
-        await sleep(randomDelay(3000, 8000));
-        if (getEnabledTokens().length > 0) {
-            return stealthLogin(token, index);
-        }
+        console.log(`[🤖 SELFBOT] ❌ Bot ${index + 1} login failed: ${err.message}`);
         return null;
     }
 }
 
 // ─── START ALL TOKENS ───
 async function startAllTokens() {
-    if (isBotStarting) return;
+    if (isBotStarting) {
+        console.log('[🚀 START] Already starting...');
+        return;
+    }
     isBotStarting = true;
     
     const tokens = getEnabledTokens();
-    console.log(`[🚀 START] Launching ${tokens.length} stealth bots...`);
+    console.log(`[🚀 START] Launching ${tokens.length} user tokens...`);
     
+    if (tokens.length === 0) {
+        console.log('[🚀 START] No enabled tokens found! Add tokens first.');
+        isBotStarting = false;
+        return;
+    }
+    
+    // Clear existing clients
+    for (const client of clients) {
+        try { if (client) await client.destroy(); } catch (e) {}
+    }
     clients.length = 0;
     clientMap.clear();
+    connections.clear();
+    players.clear();
+    activeResources.clear();
     
+    let successCount = 0;
     for (let i = 0; i < tokens.length; i++) {
         const tokenData = tokens[i];
-        await stealthLogin(tokenData.token, i);
-        await sleep(randomDelay(1000, 4000));
+        console.log(`[🚀 START] Logging in token ${i + 1}/${tokens.length}...`);
+        const client = await stealthLogin(tokenData.token, i);
+        if (client) successCount++;
+        await sleep(randomDelay(1000, 3000));
     }
     
     isBotStarting = false;
-    console.log(`[🚀 START] ${clients.length} bots online`);
+    console.log(`[🚀 START] ✅ ${successCount}/${tokens.length} user bots online`);
     io.emit('stats', { 
         bots: clients.length, 
         online: clients.filter(c => c?.user).length 
     });
+    io.emit('command_result', { command: 'start', result: `✅ ${successCount}/${tokens.length} bots online` });
 }
 
 // ─── STOP ALL TOKENS ───
 async function stopAllTokens() {
-    console.log('[🛑 STOP] Shutting down all bots...');
+    console.log('[🛑 STOP] Shutting down all user bots...');
     for (const client of clients) {
         try {
             if (client) await client.destroy();
@@ -676,16 +695,109 @@ async function stopAllTokens() {
     activeResources.clear();
     isLoggedIn = false;
     io.emit('stats', { bots: 0, online: 0 });
-    console.log('[🛑 STOP] All bots offline');
+    console.log('[🛑 STOP] All user bots offline');
+    io.emit('command_result', { command: 'stop', result: '🛑 All bots stopped' });
 }
 
-// ─── STEALTH COMMANDS ───
+// ─── STEALTH JOIN VC (SELFBOT VERSION) ───
+async function stealthJoinVC(channelId) {
+    currentChannelId = channelId;
+    
+    const onlineBots = clients.filter(c => c?.user);
+    console.log(`[🔊 SELFBOT VC] Connecting ${onlineBots.length} user bots to VC: ${channelId}`);
+    
+    if (onlineBots.length === 0) {
+        console.log('[🔊 SELFBOT VC] ❌ No bots online! Start tokens first.');
+        io.emit('command_result', { command: 'joinvc', result: '❌ No bots online! Start tokens first.' });
+        return;
+    }
+    
+    // Check if bots are in the server
+    let connected = 0;
+    let notInServer = 0;
+    
+    for (const [index, client] of clients.entries()) {
+        if (!client || !client.user) {
+            console.log(`[Bot ${index + 1}] Skipping - not online`);
+            continue;
+        }
+        try {
+            console.log(`[Bot ${index + 1}] Attempting to join VC...`);
+            const channel = await client.channels.fetch(channelId);
+            
+            if (!channel) {
+                console.log(`[Bot ${index + 1}] ❌ Channel not found - token not in this server`);
+                notInServer++;
+                continue;
+            }
+            
+            console.log(`[Bot ${index + 1}] Found channel: ${channel.name || channel.id} in server: ${channel.guild?.name || 'Unknown'}`);
+            
+            // Check if bot is in the guild
+            const guild = await client.guilds.fetch(channel.guild.id).catch(() => null);
+            if (!guild) {
+                console.log(`[Bot ${index + 1}] ❌ Not in this guild! Use SJOIN first.`);
+                notInServer++;
+                continue;
+            }
+            
+            const conn = joinVoiceChannel({
+                channelId: channel.id,
+                guildId: channel.guild.id,
+                adapterCreator: channel.guild.voiceAdapterCreator,
+                selfMute: false,
+                selfDeaf: false,
+                group: client.user.id
+            });
+            
+            const player = createAudioPlayer();
+            conn.subscribe(player);
+            player.on(AudioPlayerStatus.Idle, () => {
+                if (loopMode && currentUrl && !isPaused && index === 0) {
+                    console.log("[LOOP] 🔄 Replaying...");
+                    setTimeout(() => startFFmpegStream(currentUrl), 500);
+                }
+            });
+            
+            connections.set(index, conn);
+            players.set(index, player);
+            connected++;
+            console.log(`[Bot ${index + 1}] ✅ Connected to VC: ${channel.name}`);
+            
+        } catch (err) {
+            console.log(`[Bot ${index + 1}] ❌ VC Error: ${err.message}`);
+            if (err.message.includes('Not Found')) {
+                notInServer++;
+            }
+        }
+        await sleep(randomDelay(300, 800));
+    }
+    
+    console.log(`[🔊 SELFBOT VC] ✅ ${connected}/${clients.length} bots connected (${notInServer} not in server)`);
+    io.emit('stats', { connected: connections.size });
+    
+    let resultMsg = `✅ ${connected}/${clients.length} bots joined VC`;
+    if (notInServer > 0) {
+        resultMsg += ` (${notInServer} not in server - use SJOIN)`;
+    }
+    io.emit('command_result', { command: 'joinvc', result: resultMsg });
+}
+
+// ─── STEALTH SJOIN ───
 async function stealthSjoin(inviteInput) {
-    console.log(`\n[🔗 STEALTH SJOIN] Joining ${clients.length} bots...`);
+    const onlineBots = clients.filter(c => c?.user);
+    console.log(`\n[🔗 SELFBOT SJOIN] Joining with ${onlineBots.length} user bots...`);
+    
+    if (onlineBots.length === 0) {
+        console.log('[🔗 SELFBOT SJOIN] ❌ No bots online! Start tokens first.');
+        io.emit('command_result', { command: 'sjoin', result: '❌ No bots online! Start tokens first.' });
+        return;
+    }
+    
     let inviteCode = inviteInput;
     if (inviteInput.includes('discord.gg/')) inviteCode = inviteInput.split('discord.gg/')[1].split('/')[0].split('?')[0];
     if (inviteInput.includes('discord.com/invite/')) inviteCode = inviteInput.split('discord.com/invite/')[1].split('/')[0].split('?')[0];
-    console.log(`[🔗 STEALTH SJOIN] Code: ${inviteCode}`);
+    console.log(`[🔗 SELFBOT SJOIN] Code: ${inviteCode}`);
     
     let success = 0;
     for (let i = 0; i < clients.length; i++) {
@@ -693,6 +805,7 @@ async function stealthSjoin(inviteInput) {
         if (!client || !client.user) continue;
         
         try {
+            console.log(`[Bot ${i+1}] Joining server...`);
             const invite = await client.fetchInvite(inviteCode).catch(() => null);
             if (invite) {
                 await sleep(randomDelay(500, 2000));
@@ -705,42 +818,24 @@ async function stealthSjoin(inviteInput) {
                     headers: {
                         'Authorization': client.token,
                         'User-Agent': getRandomUserAgent(),
-                        'X-Context-Properties': 'eyJsb2NhdGlvbiI6Ikludml0ZSBCdXR0b24ifQ==',
-                        'Accept-Language': 'en-US,en;q=0.9',
-                        'X-Discord-Locale': 'en-US'
+                        'X-Context-Properties': 'eyJsb2NhdGlvbiI6Ikludml0ZSBCdXR0b24ifQ=='
                     }
                 });
-                console.log(`✅ Bot ${i+1}: Joined (API stealth)`);
+                console.log(`✅ Bot ${i+1}: Joined (API)`);
                 success++;
             }
         } catch (err) {
-            try {
-                await sleep(randomDelay(1000, 3000));
-                await axios.post(`https://discord.com/api/v9/invites/${inviteCode}`, {
-                    guild_id: null,
-                    channel_id: null
-                }, {
-                    headers: {
-                        'Authorization': client.token,
-                        'User-Agent': getRandomUserAgent(),
-                        'X-Context-Properties': 'eyJsb2NhdGlvbiI6Ikludml0ZSBCdXR0b24ifQ==',
-                        'Content-Type': 'application/json'
-                    }
-                });
-                console.log(`✅ Bot ${i+1}: Joined (forced)`);
-                success++;
-            } catch (e2) {
-                console.log(`⚠️ Bot ${i+1}: Failed - ${e2.message}`);
-            }
+            console.log(`⚠️ Bot ${i+1}: Failed - ${err.message}`);
         }
-        await sleep(randomDelay(1500, 5000));
+        await sleep(randomDelay(1500, 3000));
     }
-    console.log(`\n[🔗 STEALTH SJOIN] ✅ ${success}/${clients.length} joined undetected`);
-    io.emit('command_result', { command: 'sjoin', result: `${success}/${clients.length} joined` });
+    console.log(`\n[🔗 SELFBOT SJOIN] ✅ ${success}/${clients.length} joined`);
+    io.emit('command_result', { command: 'sjoin', result: `✅ ${success}/${clients.length} joined server` });
 }
 
+// ─── STEALTH SLEAVE ───
 async function stealthSleave(serverId) {
-    console.log(`\n[🚪 STEALTH SLEAVE] Leaving ${serverId}...`);
+    console.log(`\n[🚪 SELFBOT SLEAVE] Leaving ${serverId}...`);
     let success = 0;
     for (let i = 0; i < clients.length; i++) {
         const client = clients[i];
@@ -759,11 +854,10 @@ async function stealthSleave(serverId) {
                 await axios.delete(`https://discord.com/api/v9/users/@me/guilds/${serverId}`, {
                     headers: { 
                         'Authorization': client.token,
-                        'User-Agent': getRandomUserAgent(),
-                        'X-Discord-Locale': 'en-US'
+                        'User-Agent': getRandomUserAgent()
                     }
                 });
-                console.log(`✅ Bot ${i+1}: Left (API stealth)`);
+                console.log(`✅ Bot ${i+1}: Left (API)`);
                 success++;
             } catch (e2) {
                 console.log(`⚠️ Bot ${i+1}: Failed - ${e2.message}`);
@@ -771,11 +865,13 @@ async function stealthSleave(serverId) {
         }
         await sleep(randomDelay(200, 800));
     }
-    console.log(`\n[🚪 STEALTH SLEAVE] ✅ ${success}/${clients.length} left`);
+    console.log(`\n[🚪 SELFBOT SLEAVE] ✅ ${success}/${clients.length} left`);
+    io.emit('command_result', { command: 'sleave', result: `✅ ${success}/${clients.length} left server` });
 }
 
+// ─── STEALTH SLEAVE ALL ───
 async function stealthSleaveAll() {
-    console.log(`\n[🚪 STEALTH SLEAVE ALL] Leaving ALL servers...`);
+    console.log(`\n[🚪 SELFBOT SLEAVE ALL] Leaving ALL servers...`);
     let total = 0;
     for (let i = 0; i < clients.length; i++) {
         const client = clients[i];
@@ -797,11 +893,13 @@ async function stealthSleaveAll() {
             await sleep(randomDelay(100, 400));
         }
     }
-    console.log(`\n[🚪 STEALTH SLEAVE ALL] ✅ Left ${total} servers total`);
+    console.log(`\n[🚪 SELFBOT SLEAVE ALL] ✅ Left ${total} servers total`);
+    io.emit('command_result', { command: 'sleaveall', result: `✅ Left ${total} servers` });
 }
 
+// ─── STEALTH NAME CHANGE ───
 async function stealthNameChange(newName) {
-    console.log(`\n[📛 STEALTH NAME] Changing ${clients.length} bots to ${newName}`);
+    console.log(`\n[📛 SELFBOT NAME] Changing ${clients.length} bots to ${newName}`);
     let success = 0;
     for (let i = 0; i < clients.length; i++) {
         const client = clients[i];
@@ -817,11 +915,10 @@ async function stealthNameChange(newName) {
                 await axios.patch(`https://discord.com/api/v9/users/@me`, { username: newName }, {
                     headers: { 
                         'Authorization': client.token,
-                        'User-Agent': getRandomUserAgent(),
-                        'Content-Type': 'application/json'
+                        'User-Agent': getRandomUserAgent()
                     }
                 });
-                console.log(`✅ Bot ${i+1}: Changed (API stealth)`);
+                console.log(`✅ Bot ${i+1}: Changed (API)`);
                 success++;
             } catch (e2) {
                 console.log(`⚠️ Bot ${i+1}: Failed - ${e2.message}`);
@@ -829,11 +926,13 @@ async function stealthNameChange(newName) {
         }
         await sleep(randomDelay(300, 1000));
     }
-    console.log(`\n[📛 STEALTH NAME] ✅ ${success}/${clients.length} changed`);
+    console.log(`\n[📛 SELFBOT NAME] ✅ ${success}/${clients.length} changed`);
+    io.emit('command_result', { command: 'name', result: `✅ ${success}/${clients.length} changed to ${newName}` });
 }
 
+// ─── STEALTH SEND ───
 async function stealthSend(channelId, message) {
-    console.log(`\n[📨 STEALTH SEND] Sending to ${clients.length} bots`);
+    console.log(`\n[📨 SELFBOT SEND] Sending to ${clients.length} bots`);
     let success = 0;
     for (let i = 0; i < clients.length; i++) {
         const client = clients[i];
@@ -848,11 +947,13 @@ async function stealthSend(channelId, message) {
         } catch (e) { success++; }
         await sleep(randomDelay(100, 400));
     }
-    console.log(`\n[📨 STEALTH SEND] ✅ ${success}/${clients.length} sent`);
+    console.log(`\n[📨 SELFBOT SEND] ✅ ${success}/${clients.length} sent`);
+    io.emit('command_result', { command: 'ssend', result: `✅ ${success}/${clients.length} sent` });
 }
 
+// ─── STEALTH PASSWORD BYPASS ───
 async function stealthPasswordBypass(channelId, targetUser, password) {
-    console.log(`\n[🔓 STEALTH PASS] Bypassing for ${targetUser}`);
+    console.log(`\n[🔓 SELFBOT PASS] Bypassing for ${targetUser}`);
     let success = 0;
     for (let i = 0; i < clients.length; i++) {
         const client = clients[i];
@@ -867,49 +968,15 @@ async function stealthPasswordBypass(channelId, targetUser, password) {
         } catch (e) { success++; }
         await sleep(randomDelay(200, 600));
     }
-    console.log(`\n[🔓 STEALTH PASS] ✅ ${success}/${clients.length} sent`);
+    console.log(`\n[🔓 SELFBOT PASS] ✅ ${success}/${clients.length} sent`);
+    io.emit('command_result', { command: 'pass', result: `✅ ${success}/${clients.length} sent` });
 }
 
-async function stealthJoinVC(channelId) {
-    currentChannelId = channelId;
-    console.log(`\n[🔊 STEALTH VC] Connecting ${clients.length} bots to ${channelId}`);
-    for (const [index, client] of clients.entries()) {
-        if (!client || !client.user) continue;
-        try {
-            await sleep(randomDelay(300, 1500));
-            const channel = await client.channels.fetch(channelId);
-            if (channel) {
-                const conn = joinVoiceChannel({
-                    channelId: channel.id,
-                    guildId: channel.guild.id,
-                    adapterCreator: channel.guild.voiceAdapterCreator,
-                    selfMute: false,
-                    selfDeaf: false,
-                    group: client.user.id
-                });
-                const player = createAudioPlayer();
-                conn.subscribe(player);
-                player.on(AudioPlayerStatus.Idle, () => {
-                    if (loopMode && currentUrl && !isPaused && index === 0) {
-                        console.log("[LOOP] 🔄 Replaying...");
-                        setTimeout(() => startFFmpegStream(currentUrl), 500);
-                    }
-                });
-                connections.set(index, conn);
-                players.set(index, player);
-                console.log(`[Bot ${index + 1}] Connected`);
-            }
-        } catch (err) {
-            console.log(`[Bot ${index + 1}] Error: ${err.message}`);
-        }
-        await sleep(randomDelay(200, 600));
-    }
-    io.emit('stats', { connected: connections.size });
-}
-
+// ─── STEALTH PLAY ───
 async function stealthPlay(url) {
     if (connections.size === 0) {
         console.log("[ERROR] Join a voice channel first");
+        io.emit('command_result', { command: 'play', result: '❌ Join VC first!' });
         return;
     }
     const isDiscordLink = url.includes('cdn.discordapp.com') || url.includes('media.discordapp.net');
@@ -938,8 +1005,10 @@ async function stealthPlay(url) {
         startFFmpegStream(url);
     }
     io.emit('stats', { currentTrack: currentTitle });
+    io.emit('command_result', { command: 'play', result: `▶️ Playing: ${currentTitle}` });
 }
 
+// ─── DOMINATION ───
 async function dominationTakeover(channelId) {
     if (dominationMode) return console.log("[DOMINATION] Already active!");
     dominationMode = true;
@@ -986,6 +1055,7 @@ async function dominationTakeover(channelId) {
         } catch (err) {}
     }, 5000);
     io.emit('stats', { domination: true });
+    io.emit('command_result', { command: 'dominate', result: `👑 ${clients.length} bots dominating ${channelId}` });
 }
 
 function stopDomination() {
@@ -997,8 +1067,10 @@ function stopDomination() {
     activeResources.clear();
     io.emit('stats', { domination: false });
     console.log(`[DOMINATION] ⚔️ Deactivated.`);
+    io.emit('command_result', { command: 'stopdom', result: '⛔ Domination stopped' });
 }
 
+// ─── SPAM ───
 async function spamCommand(channelId, messages, delay) {
     if (spamActive) return console.log("[SPAM] Already active!");
     spamChannelId = channelId;
@@ -1026,6 +1098,7 @@ async function spamCommand(channelId, messages, delay) {
         io.emit('spam', { total, sent });
     }, spamDelay + randomDelay(0, 2000));
     io.emit('stats', { spam: true });
+    io.emit('command_result', { command: 'spam', result: `💬 Spamming ${messages.length} messages` });
 }
 
 function stopSpamCommand() {
@@ -1033,6 +1106,7 @@ function stopSpamCommand() {
     spamActive = false;
     io.emit('stats', { spam: false });
     console.log(`[SPAM] ⛔ Stopped`);
+    io.emit('command_result', { command: 'stopspam', result: '⛔ Spam stopped' });
 }
 
 // ─── AUDIO ENGINE ───
@@ -1085,23 +1159,25 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', async () => {
     console.log(`
 ╔══════════════════════════════════════════════════════════════╗
-║        👑 RINTU DOMINATION SUITE 👑                        ║
+║        👑 RINTU SELFBOT SUITE 👑                          ║
 ║              🛡️ STEALTH MODE: MAXIMUM                      ║
-║              🔥 FORCE SUCCESS: ON                          ║
+║              🔥 USER TOKENS: ENABLED                       ║
 ║              💀 SLASH KILLER: ACTIVE                       ║
 ╠══════════════════════════════════════════════════════════════╣
-║  📦 Tokens Loaded: ${tokenStore.length}                    ║
+║  📦 User Tokens: ${tokenStore.length}                      ║
 ║  ✅ Enabled: ${getEnabledTokens().length}                  ║
 ║  🔑 Keys Generated: ${keysStore.length}                    ║
 ║  🌐 Dashboard: http://localhost:${PORT}                     ║
 ║  🔑 Admin Pass: ${process.env.ADMIN_PASS || 'SET_IN_ENV'}  ║
 ║  📋 Login to access all features                           ║
-║  🔗 All commands are UNDETECTABLE!                         ║
+║  🔗 SELFBOT MODE: ACTIVE                                   ║
 ╚══════════════════════════════════════════════════════════════╝
     `);
     
     if (getEnabledTokens().length > 0) {
-        console.log('[🚀 AUTO-START] Launching enabled tokens...');
+        console.log('[🚀 AUTO-START] Launching user tokens...');
         await startAllTokens();
+    } else {
+        console.log('[⚠️ WARNING] No user tokens found! Add tokens from dashboard.');
     }
 });
