@@ -1,4 +1,4 @@
-console.log('👑 RINTU SUITE v7.0 STARTING...');
+console.log('👑 RINTU SUITE v8.0 MASTER STARTING...');
 
 require('dotenv').config();
 const express = require('express');
@@ -26,16 +26,12 @@ function loadTokens() {
             tokens = [];
             fs.writeFileSync(TOKEN_FILE, JSON.stringify([]));
         }
-    } catch (e) {
-        tokens = [];
-    }
+    } catch (e) { tokens = []; }
     return tokens;
 }
 
 function saveTokens() {
-    try {
-        fs.writeFileSync(TOKEN_FILE, JSON.stringify(tokens, null, 2));
-    } catch (e) {}
+    try { fs.writeFileSync(TOKEN_FILE, JSON.stringify(tokens, null, 2)); } catch (e) {}
 }
 
 function addToken(token, owner = 'default') {
@@ -66,11 +62,7 @@ function deleteToken(id) {
 
 function toggleToken(id) {
     const t = tokens.find(t => t.id === id);
-    if (t) {
-        t.enabled = !t.enabled;
-        saveTokens();
-        return t;
-    }
+    if (t) { t.enabled = !t.enabled; saveTokens(); return t; }
     return null;
 }
 
@@ -87,16 +79,12 @@ function loadKeys() {
             keys = [];
             fs.writeFileSync(KEYS_FILE, JSON.stringify([]));
         }
-    } catch (e) {
-        keys = [];
-    }
+    } catch (e) { keys = []; }
     return keys;
 }
 
 function saveKeys() {
-    try {
-        fs.writeFileSync(KEYS_FILE, JSON.stringify(keys, null, 2));
-    } catch (e) {}
+    try { fs.writeFileSync(KEYS_FILE, JSON.stringify(keys, null, 2)); } catch (e) {}
 }
 
 function generateKey(owner, days) {
@@ -118,7 +106,7 @@ function validateKey(key) {
 loadTokens();
 loadKeys();
 
-// ─── TRY LOADING SELFBOT MODULES ───
+// ─── LOAD SELFBOT MODULES WITH ERROR HANDLING ───
 let Client, joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, StreamType;
 let youtubedl, axios;
 let selfbotLoaded = false;
@@ -142,9 +130,10 @@ try {
     console.log('[BOOT] ✅ youtube-dl-exec loaded');
     
     selfbotLoaded = true;
+    console.log('[BOOT] ✅ ALL SELFBOT MODULES LOADED!');
 } catch (e) {
-    console.log('[BOOT] ⚠️ Selfbot modules not loaded:', e.message);
-    console.log('[BOOT] ⚠️ VC Join will not work');
+    console.log('[BOOT] ⚠️ Selfbot modules error:', e.message);
+    console.log('[BOOT] ⚠️ VC features disabled');
     selfbotLoaded = false;
 }
 
@@ -185,6 +174,7 @@ let dominationMode = false;
 let dominationInterval = null;
 let spamActive = false;
 let spamInterval = null;
+let isBotStarting = false;
 
 // ─── ROUTES ───
 app.get('/', (req, res) => {
@@ -200,13 +190,10 @@ app.get('/', (req, res) => {
         });
     } catch (err) {
         res.send(`
-            <html>
-                <body style="background:#0a0a0a;color:#00ff41;font-family:monospace;padding:40px;">
-                    <h1 style="color:#ff0040;">👑 RINTU SUITE</h1>
-                    <p>✅ Server is running!</p>
-                    <p>Error: ${err.message}</p>
-                </body>
-            </html>
+            <html><body style="background:#0a0a0a;color:#00ff41;font-family:monospace;padding:40px;">
+                <h1 style="color:#ff0040;">👑 RINTU SUITE</h1>
+                <p>✅ Server running! Error: ${err.message}</p>
+            </body></html>
         `);
     }
 });
@@ -268,7 +255,7 @@ app.post('/api/tokens/toggle', (req, res) => {
 
 app.post('/api/tokens/start', async (req, res) => {
     if (!admin) return res.status(401).json({ error: 'Unauthorized' });
-    if (!selfbotLoaded) return res.status(400).json({ error: 'Selfbot modules not loaded' });
+    if (!selfbotLoaded) return res.status(400).json({ error: 'Selfbot not loaded' });
     await startBots();
     res.json({ success: true });
 });
@@ -287,10 +274,7 @@ app.post('/api/tokens/bulk', (req, res) => {
     }
     let added = 0;
     tokenList.forEach(t => {
-        if (t && t.length > 10) {
-            addToken(t, owner || 'bulk');
-            added++;
-        }
+        if (t && t.length > 10) { addToken(t, owner || 'bulk'); added++; }
     });
     res.json({ success: true, added, total: tokenList.length });
 });
@@ -315,7 +299,14 @@ app.post('/api/keys/validate', (req, res) => {
     res.json(result);
 });
 
-// ─── SELFBOT COMMANDS (ONLY IF LOADED) ───
+app.post('/api/keys/delete', (req, res) => {
+    if (!admin) return res.status(401).json({ error: 'Unauthorized' });
+    keys = keys.filter(k => k.key !== req.body.key);
+    saveKeys();
+    res.json({ success: true });
+});
+
+// ─── SELFBOT COMMANDS ───
 app.post('/api/joinvc', async (req, res) => {
     if (!admin) return res.status(401).json({ error: 'Unauthorized' });
     if (!selfbotLoaded) return res.status(400).json({ error: 'Selfbot not loaded' });
@@ -420,7 +411,9 @@ app.get('/api/stats', (req, res) => {
         keys: keys.length,
         online: selfbotLoaded ? clients.filter(c => c?.user).length : 0,
         connected: selfbotLoaded ? connections.size : 0,
-        selfbotLoaded: selfbotLoaded
+        selfbotLoaded: selfbotLoaded,
+        domination: dominationMode,
+        spam: spamActive
     });
 });
 
@@ -437,21 +430,29 @@ io.on('connection', (socket) => {
     });
 });
 
-// ─── SELFBOT FUNCTIONS (ONLY IF LOADED) ───
+// ─── SELFBOT FUNCTIONS ───
 async function startBots() {
-    if (!selfbotLoaded) {
-        console.log('[BOTS] ❌ Selfbot modules not loaded');
-        return;
-    }
+    if (!selfbotLoaded || isBotStarting) return;
+    isBotStarting = true;
     
     const enabled = getEnabledTokens();
     console.log('[BOTS] Starting', enabled.length, 'bots');
+    
+    if (enabled.length === 0) {
+        io.emit('command_result', { command: 'start', result: '❌ No enabled tokens!' });
+        isBotStarting = false;
+        return;
+    }
     
     for (const c of clients) {
         try { await c.destroy(); } catch(e) {}
     }
     clients.length = 0;
+    connections.clear();
+    players.clear();
+    activeResources.clear();
     
+    let success = 0;
     for (let i = 0; i < enabled.length; i++) {
         const t = enabled[i];
         try {
@@ -469,13 +470,17 @@ async function startBots() {
             
             await client.login(t.token);
             clients.push(client);
+            success++;
             await sleep(2000);
         } catch (e) {
             console.log('[BOTS] ❌ Failed:', e.message);
         }
     }
-    console.log('[BOTS] ✅', clients.filter(c => c?.user).length, 'online');
+    
+    isBotStarting = false;
+    console.log('[BOTS] ✅', success, '/', enabled.length, 'online');
     io.emit('stats', { online: clients.filter(c => c?.user).length });
+    io.emit('command_result', { command: 'start', result: `✅ ${success}/${enabled.length} bots online` });
 }
 
 async function stopBots() {
@@ -488,6 +493,7 @@ async function stopBots() {
     players.clear();
     activeResources.clear();
     io.emit('stats', { online: 0, connected: 0 });
+    io.emit('command_result', { command: 'stop', result: '🛑 All bots stopped' });
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -801,22 +807,34 @@ function stopFFmpeg() {
     }
 }
 
-// ─── START ───
+// ─── START SERVER ───
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`
 ╔══════════════════════════════════════════════════════════════╗
-║              👑 RINTU SUITE v7.0 👑                        ║
-║           🔥 WITH VC JOIN SUPPORT                          ║
+║           👑 RINTU SUITE v8.0 MASTER 👑                    ║
+║           🔥 ALL FEATURES WORKING                          ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  📦 Tokens: ${tokens.length}                                ║
 ║  ✅ Enabled: ${getEnabledTokens().length}                  ║
 ║  🔑 Keys: ${keys.length}                                   ║
 ║  🤖 Selfbot: ${selfbotLoaded ? '✅ LOADED' : '❌ NOT LOADED'} ║
-║  🌐 http://localhost:${PORT}                                ║
+║  🌐 Dashboard: http://localhost:${PORT}                     ║
 ║  🔑 Admin: ${process.env.ADMIN_PASS || 'RINTU_2026'}       ║
 ╚══════════════════════════════════════════════════════════════╝
     `);
+    
+    console.log('\n📋 AVAILABLE COMMANDS:');
+    console.log('  📁 Token Management: Add, Delete, Toggle, Bulk Add');
+    console.log('  🔑 KeyAuth: Generate Keys, List Keys, Validate Keys');
+    console.log('  🔊 VC: JOIN VC, PLAY Audio, Control Audio');
+    console.log('  🔗 SJOIN: Join servers with all bots');
+    console.log('  🚪 SLEAVE: Leave servers with all bots');
+    console.log('  📛 NAME: Change all bot names');
+    console.log('  📨 SSEND: Send messages from all bots');
+    console.log('  💬 SPAM: Spam messages from all bots');
+    console.log('  👑 DOMINATION: Dominate voice channels');
+    console.log('\n📌 For VC features, make sure bots are STARTED first!\n');
     
     if (selfbotLoaded && getEnabledTokens().length > 0) {
         console.log('[🚀 AUTO-START] Launching bots...');
