@@ -1,6 +1,9 @@
 console.log('👑 RINTU SUITE v7.0 STARTING...');
 
+// ─── CRITICAL: Load dotenv FIRST ───
 require('dotenv').config();
+
+// ─── IMPORTS ───
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -8,27 +11,28 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 
-// ─── SIMPLE TOKEN STORAGE (NO ENCRYPTION GLITCHES) ───
+console.log('[BOOT] Dependencies loaded');
+
+// ─── SIMPLE TOKEN STORAGE ───
 const TOKEN_FILE = path.join(__dirname, 'tokens.json');
 const KEYS_FILE = path.join(__dirname, 'keys.json');
 
 let tokens = [];
 let keys = [];
 
-// Load tokens from file
+// Load tokens
 function loadTokens() {
     try {
         if (fs.existsSync(TOKEN_FILE)) {
             const data = fs.readFileSync(TOKEN_FILE, 'utf8');
             tokens = JSON.parse(data);
-            console.log('[TOKENS] Loaded', tokens.length, 'tokens');
+            console.log('[TOKENS] Loaded', tokens.length);
         } else {
             tokens = [];
             fs.writeFileSync(TOKEN_FILE, JSON.stringify([]));
-            console.log('[TOKENS] Created new token file');
         }
     } catch (e) {
-        console.log('[TOKENS] Error loading:', e.message);
+        console.log('[TOKENS] Error:', e.message);
         tokens = [];
     }
     return tokens;
@@ -37,9 +41,8 @@ function loadTokens() {
 function saveTokens() {
     try {
         fs.writeFileSync(TOKEN_FILE, JSON.stringify(tokens, null, 2));
-        console.log('[TOKENS] Saved', tokens.length, 'tokens');
     } catch (e) {
-        console.log('[TOKENS] Error saving:', e.message);
+        console.log('[TOKENS] Save error:', e.message);
     }
 }
 
@@ -89,7 +92,7 @@ function loadKeys() {
         if (fs.existsSync(KEYS_FILE)) {
             const data = fs.readFileSync(KEYS_FILE, 'utf8');
             keys = JSON.parse(data);
-            console.log('[KEYS] Loaded', keys.length, 'keys');
+            console.log('[KEYS] Loaded', keys.length);
         } else {
             keys = [];
             fs.writeFileSync(KEYS_FILE, JSON.stringify([]));
@@ -128,38 +131,70 @@ loadKeys();
 // ─── EXPRESS SETUP ───
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, { cors: { origin: "*" } });
+const io = socketIo(server, { 
+    cors: { origin: "*" },
+    transports: ['websocket', 'polling']
+});
 
+console.log('[BOOT] Express setup');
+
+// ─── VIEW ENGINE ───
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-if (!fs.existsSync(path.join(__dirname, 'views'))) {
-    fs.mkdirSync(path.join(__dirname, 'views'));
+// Create views folder if missing
+const viewsPath = path.join(__dirname, 'views');
+if (!fs.existsSync(viewsPath)) {
+    console.log('[BOOT] Creating views folder...');
+    fs.mkdirSync(viewsPath, { recursive: true });
 }
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
 
 let admin = false;
 
 // ─── ROUTES ───
 app.get('/', (req, res) => {
-    res.render('dashboard', {
-        tokenCount: tokens.length,
-        enabledCount: getEnabledTokens().length,
-        onlineCount: clients.filter(c => c?.user).length || 0,
-        keyCount: keys.length,
-        domination: dominationMode || false,
-        spam: spamActive || false,
-        volume: Math.round(volume * 100) || 100,
-        connected: connections.size || 0,
-        admin: admin
+    try {
+        res.render('dashboard', {
+            tokenCount: tokens.length,
+            enabledCount: getEnabledTokens().length,
+            onlineCount: clients.filter(c => c?.user).length || 0,
+            keyCount: keys.length,
+            domination: dominationMode || false,
+            spam: spamActive || false,
+            volume: Math.round(volume * 100) || 100,
+            connected: connections.size || 0,
+            admin: admin
+        });
+    } catch (err) {
+        console.log('[ROUTE] Error:', err.message);
+        res.send(`
+            <html>
+                <body style="background:#0a0a0a;color:#00ff41;font-family:monospace;padding:40px;">
+                    <h1 style="color:#ff0040;">👑 RINTU SUITE</h1>
+                    <p>✅ Server is running!</p>
+                    <p>Error: ${err.message}</p>
+                    <p>Make sure views/dashboard.ejs exists!</p>
+                </body>
+            </html>
+        `);
+    }
+});
+
+app.get('/test', (req, res) => {
+    res.json({ 
+        status: 'alive', 
+        time: new Date().toISOString(),
+        tokens: tokens.length,
+        keys: keys.length
     });
 });
 
 app.post('/api/login', (req, res) => {
-    if (req.body.password === process.env.ADMIN_PASS) {
+    const { password } = req.body;
+    if (password === process.env.ADMIN_PASS) {
         admin = true;
         res.json({ success: true });
     } else {
@@ -248,13 +283,6 @@ app.post('/api/keys/validate', (req, res) => {
     if (!key) return res.json({ valid: false, message: 'Key required' });
     const result = validateKey(key);
     res.json(result);
-});
-
-app.post('/api/keys/delete', (req, res) => {
-    if (!admin) return res.status(401).json({ error: 'Unauthorized' });
-    keys = keys.filter(k => k.key !== req.body.key);
-    saveKeys();
-    res.json({ success: true });
 });
 
 // ─── COMMAND API ───
@@ -370,11 +398,15 @@ io.on('connection', (socket) => {
 });
 
 // ─── DISCORD SELFBOT ───
+console.log('[BOOT] Loading Discord modules...');
+
 const { Client } = require("discord.js-selfbot-v13");
 const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, StreamType } = require("@discordjs/voice");
 const { spawn } = require("child_process");
 const youtubedl = require("youtube-dl-exec");
 const axios = require("axios");
+
+console.log('[BOOT] Discord modules loaded');
 
 const clients = [];
 const connections = new Map();
@@ -397,12 +429,10 @@ async function startBots() {
     const enabled = getEnabledTokens();
     console.log('[BOTS] Starting', enabled.length, 'bots');
     
-    // Clear old
     for (const c of clients) {
         try { await c.destroy(); } catch(e) {}
     }
     clients.length = 0;
-    clientMap.clear();
     
     for (let i = 0; i < enabled.length; i++) {
         const t = enabled[i];
@@ -626,7 +656,6 @@ async function startDomination(channelId) {
     }
     
     dominationInterval = setInterval(() => {
-        // Check for speakers
         io.emit('domination', { active: true });
     }, 5000);
     
@@ -715,13 +744,13 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log(`
 ╔══════════════════════════════════════════════════════════════╗
 ║              👑 RINTU SUITE v7.0 👑                        ║
-║           🔥 CLEAN - WORKING - NO GLITCHES                 ║
+║           🔥 DEPLOYED SUCCESSFULLY                         ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  📦 Tokens: ${tokens.length}                                ║
 ║  ✅ Enabled: ${getEnabledTokens().length}                  ║
 ║  🔑 Keys: ${keys.length}                                   ║
 ║  🌐 http://localhost:${PORT}                                ║
-║  🔑 Admin: ${process.env.ADMIN_PASS}                       ║
+║  🔑 Admin: ${process.env.ADMIN_PASS || 'RINTU_2026'}       ║
 ╚══════════════════════════════════════════════════════════════╝
     `);
 });
