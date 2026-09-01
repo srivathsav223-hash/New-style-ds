@@ -6,18 +6,723 @@
     <title>👑 RINTU DOMINATION SUITE</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* ─── ALL STYLES FROM PREVIOUS VERSION ─── */
-        /* (Full CSS from the previous dashboard.ejs goes here) */
-        /* I'll provide the complete file in the response */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: #0a0a0a; 
+            color: #00ffc8; 
+            font-family: 'Rajdhani', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        #particleCanvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .container { max-width: 1600px; margin: 0 auto; padding: 20px; position: relative; z-index: 1; }
+        
+        .header {
+            text-align: center;
+            padding: 30px 0 10px 0;
+            text-shadow: 0 0 40px rgba(0,255,200,0.3);
+        }
+        .header h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: 4rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00ffc8, #ff0040, #ff8800, #00ffc8);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 4s ease-in-out infinite;
+            letter-spacing: 6px;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .header .subtitle {
+            font-size: 1.2rem;
+            color: #666;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+        }
+        .header .subtitle span { color: #ff0040; font-weight: 700; }
+
+        .glass {
+            background: rgba(10,10,10,0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0,255,200,0.15);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 12px 0;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+            transition: all 0.3s ease;
+        }
+        .glass:hover { border-color: rgba(0,255,200,0.35); }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 15px 0;
+        }
+
+        .stat-card {
+            background: rgba(0,255,200,0.03);
+            border-radius: 12px;
+            padding: 16px 20px;
+            border: 1px solid rgba(0,255,200,0.08);
+        }
+        .stat-card .label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #666;
+        }
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: 'Orbitron', monospace;
+            margin-top: 4px;
+            background: linear-gradient(135deg, #00ffc8, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-card .value.danger {
+            background: linear-gradient(135deg, #ff0040, #ff4400);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-card .value.gold {
+            background: linear-gradient(135deg, #ff8800, #ffcc00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .login-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .login-box {
+            background: rgba(10,10,10,0.9);
+            border: 2px solid rgba(0,255,200,0.25);
+            border-radius: 20px;
+            padding: 50px 40px;
+            min-width: 360px;
+            text-align: center;
+        }
+        .login-box h2 {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, #ff0040, #ff8800);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .login-box .sub { color: #666; font-size: 0.9rem; letter-spacing: 4px; margin: 5px 0 25px 0; }
+        .login-box input {
+            background: rgba(0,0,0,0.6);
+            color: #00ffc8;
+            border: 1px solid rgba(0,255,200,0.15);
+            padding: 14px 18px;
+            width: 100%;
+            border-radius: 10px;
+            font-size: 1rem;
+            margin-bottom: 16px;
+            outline: none;
+            font-family: 'Rajdhani', sans-serif;
+        }
+        .login-box input:focus { border-color: rgba(0,255,200,0.5); }
+        .login-box button {
+            background: linear-gradient(135deg, #ff0040, #ff4400);
+            color: #fff;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            width: 100%;
+            font-family: 'Rajdhani', sans-serif;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+        }
+        .login-box button:hover { transform: scale(1.02); box-shadow: 0 0 40px rgba(255,0,64,0.3); }
+
+        .btn {
+            background: rgba(0,255,200,0.08);
+            color: #00ffc8;
+            border: 1px solid rgba(0,255,200,0.15);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+        .btn:hover { background: rgba(0,255,200,0.15); border-color: rgba(0,255,200,0.3); }
+        .btn.danger { border-color: rgba(255,0,64,0.3); color: #ff0040; }
+        .btn.danger:hover { background: rgba(255,0,64,0.15); }
+        .btn.primary { border-color: rgba(255,136,0,0.3); color: #ff8800; }
+        .btn.primary:hover { background: rgba(255,136,0,0.15); }
+        .btn.small { padding: 4px 10px; font-size: 0.7rem; }
+
+        .cmd-btn {
+            background: rgba(0,255,200,0.05);
+            border: 1px solid rgba(0,255,200,0.15);
+            color: #00ffc8;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            font-size: 0.75rem;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+        .cmd-btn:hover { background: rgba(0,255,200,0.15); }
+        .cmd-btn.danger { border-color: rgba(255,0,64,0.3); color: #ff0040; }
+        .cmd-btn.danger:hover { background: rgba(255,0,64,0.15); }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 8px 0;
+        }
+        .input-group input {
+            background: rgba(0,0,0,0.5);
+            color: #00ffc8;
+            border: 1px solid rgba(0,255,200,0.12);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.9rem;
+            outline: none;
+            flex: 1;
+            min-width: 140px;
+        }
+        .input-group input:focus { border-color: rgba(0,255,200,0.3); }
+        .input-group input::placeholder { color: #444; }
+
+        .token-list { max-height: 300px; overflow-y: auto; margin-top: 10px; }
+        .token-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(0,255,200,0.06);
+            font-size: 0.8rem;
+        }
+        .token-item .token { color: #666; font-family: monospace; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+        .token-item .status {
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .token-item .status.enabled { background: rgba(0,255,200,0.15); color: #00ffc8; }
+        .token-item .status.disabled { background: rgba(255,0,64,0.15); color: #ff0040; }
+
+        .command-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 6px;
+        }
+
+        #commandOutput {
+            background: rgba(0,0,0,0.4);
+            border-radius: 8px;
+            padding: 10px;
+            max-height: 100px;
+            overflow-y: auto;
+            font-size: 0.75rem;
+            color: #666;
+            font-family: monospace;
+            margin-top: 8px;
+            border: 1px solid rgba(0,255,200,0.05);
+        }
+        #commandOutput .success { color: #00ffc8; }
+        #commandOutput .error { color: #ff0040; }
+
+        .hidden { display: none !important; }
+        .flex { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+        ::-webkit-scrollbar { width: 4px; background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #00ffc8; border-radius: 4px; }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2.2rem; }
+            .login-box { min-width: 300px; padding: 30px 20px; }
+            .grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+        }
     </style>
 </head>
 <body>
-    <!-- ─── FULL HTML FROM PREVIOUS VERSION ─── -->
-    <!-- (Complete dashboard HTML with particles, login, stats, tokens, commands) -->
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        // ─── FULL JAVASCRIPT FROM PREVIOUS VERSION ───
-        // (Complete JS with particle system, login, token management, commands)
-    </script>
+
+<canvas id="particleCanvas"></canvas>
+
+<!-- LOGIN OVERLAY -->
+<div id="loginOverlay" class="login-overlay">
+    <div class="login-box">
+        <h2>👑 RINTU</h2>
+        <div class="sub">DOMINATION SUITE</div>
+        <div style="margin:15px 0; font-size:0.7rem; color:#444; letter-spacing:2px;">⚡ STEALTH MODE: MAXIMUM ⚡</div>
+        <input type="password" id="adminPass" placeholder="Enter Admin Password" onkeydown="if(event.key==='Enter') login()">
+        <button onclick="login()">🔓 UNLOCK</button>
+    </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="container hidden">
+
+    <div class="header">
+        <h1>👑 RINTU</h1>
+        <div class="subtitle">DOMINATION <span>SUITE</span> • v6.0</div>
+    </div>
+
+    <!-- TOP BAR -->
+    <div class="glass" style="padding:12px 20px;">
+        <div class="flex" style="justify-content:space-between;">
+            <div class="flex">
+                <span>🤖 <span id="onlineCount">0</span> bots</span>
+                <span>📦 <span id="tokenCount">0</span> tokens</span>
+                <span>🔊 <span id="vcCount">0</span> VC</span>
+                <span>👑 <span id="dominationStatus" style="color:#888;">OFF</span></span>
+            </div>
+            <button class="btn danger small" onclick="logout()">🔒 LOGOUT</button>
+        </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="grid">
+        <div class="stat-card"><div class="label">🤖 Online Bots</div><div class="value" id="statBots">0</div></div>
+        <div class="stat-card"><div class="label">📦 Active Tokens</div><div class="value gold" id="statTokens">0</div></div>
+        <div class="stat-card"><div class="label">🔊 Voice Connections</div><div class="value" id="statVC">0</div></div>
+        <div class="stat-card"><div class="label">👑 Domination</div><div class="value danger" id="statDomination">OFF</div></div>
+        <div class="stat-card"><div class="label">💬 Spam</div><div class="value gold" id="statSpam">OFF</div></div>
+        <div class="stat-card"><div class="label">🔊 Volume</div><div class="value" id="statVolume">100%</div></div>
+    </div>
+
+    <!-- TOKEN MANAGEMENT -->
+    <div class="glass">
+        <div class="flex" style="justify-content:space-between;">
+            <h2 style="color:#ff0040; font-size:1.2rem;">📁 TOKEN MANAGEMENT</h2>
+            <div class="flex">
+                <button class="btn primary small" onclick="startAllTokens()">▶ START</button>
+                <button class="btn danger small" onclick="stopAllTokens()">⏹ STOP</button>
+                <button class="btn small" onclick="refreshTokens()">🔄 REFRESH</button>
+            </div>
+        </div>
+        <div class="input-group">
+            <input type="text" id="tokenInput" placeholder="Discord User Token" style="flex:3;">
+            <input type="text" id="ownerInput" placeholder="Owner" style="flex:1;">
+            <button class="btn primary" onclick="addToken()">➕ ADD</button>
+        </div>
+        <div class="token-list" id="tokenList"></div>
+    </div>
+
+    <!-- COMMANDS + AUDIO -->
+    <div class="grid" style="grid-template-columns: 2fr 1fr;">
+        <div class="glass" style="border-color:rgba(255,136,0,0.2);">
+            <h3 style="color:#ff8800; font-size:1rem;">⚔️ COMMANDS</h3>
+            <div class="input-group">
+                <input type="text" id="cmdChannel" placeholder="Channel ID">
+                <input type="text" id="cmdTarget" placeholder="Target">
+            </div>
+            <div class="command-grid">
+                <button class="cmd-btn" onclick="runCommand('dominate')">👑 DOMINATE</button>
+                <button class="cmd-btn danger" onclick="runCommand('stopdom')">⛔ STOP</button>
+                <button class="cmd-btn" onclick="runCommand('sjoin')">🔗 SJOIN</button>
+                <button class="cmd-btn danger" onclick="runCommand('sleave')">🚪 SLEAVE</button>
+                <button class="cmd-btn danger" onclick="runCommand('sleaveall')">🚪 ALL</button>
+                <button class="cmd-btn" onclick="runCommand('name')">📛 NAME</button>
+                <button class="cmd-btn" onclick="runCommand('pass')">🔓 PASS</button>
+                <button class="cmd-btn" onclick="runCommand('ssend')">📨 SEND</button>
+                <button class="cmd-btn" onclick="runCommand('spam')">💬 SPAM</button>
+                <button class="cmd-btn danger" onclick="runCommand('stopspam')">⛔ STOP</button>
+                <button class="cmd-btn" onclick="runCommand('joinvc')">🔊 JOIN VC</button>
+                <button class="cmd-btn" onclick="runCommand('play')">▶️ PLAY</button>
+            </div>
+            <div class="input-group">
+                <input type="text" id="cmdExtra" placeholder="Extra param" style="flex:2;">
+            </div>
+            <div id="commandOutput"></div>
+        </div>
+
+        <div class="glass">
+            <h3 style="color:#ff8800; font-size:1rem;">🎵 AUDIO</h3>
+            <div style="margin:6px 0; font-size:0.8rem; color:#666;">🎵 <span id="currentTrack">No track</span></div>
+            <div class="input-group">
+                <input type="number" id="volumeInput" value="100" min="1" max="20000" style="width:80px;">
+                <button class="btn small" onclick="setVolume()">SET</button>
+                <button class="btn danger small" onclick="setMax()">MAX</button>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:6px;">
+                <button class="cmd-btn" onclick="sendControl('pause')">⏸</button>
+                <button class="cmd-btn" onclick="sendControl('resume')">▶️</button>
+                <button class="cmd-btn" onclick="sendControl('stop')">⏹</button>
+                <button class="cmd-btn" onclick="sendControl('loop')">🔄</button>
+                <button class="cmd-btn" onclick="sendControl('bassboost')">🎵</button>
+                <button class="cmd-btn danger" onclick="sendControl('blast')">💥</button>
+                <button class="cmd-btn" onclick="sendControl('pungi')">🔊</button>
+                <button class="cmd-btn" onclick="sendControl('leave')">🚪</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    // ─── PARTICLES ───
+    (function() {
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        let w, h;
+        function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize);
+        resize();
+
+        const particles = [];
+        for (let i = 0; i < 80; i++) {
+            particles.push({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                r: Math.random() * 2 + 1,
+                speed: Math.random() * 1 + 0.3,
+                wind: (Math.random() - 0.5) * 0.3,
+                opacity: Math.random() * 0.5 + 0.2
+            });
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, w, h);
+            const grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w);
+            grad.addColorStop(0, '#0d0d1a');
+            grad.addColorStop(1, '#050508');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, w, h);
+
+            particles.forEach(p => {
+                p.y += p.speed;
+                p.x += p.wind + Math.sin(p.y / 100) * 0.2;
+                if (p.y > h + 10) { p.y = -10; p.x = Math.random() * w; }
+                if (p.x > w + 10) p.x = -10;
+                if (p.x < -10) p.x = w + 10;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(200, 230, 255, ${p.opacity})`;
+                ctx.fill();
+            });
+
+            // Meteors
+            if (Math.random() < 0.005) {
+                const mx = Math.random() * w * 0.8;
+                const my = Math.random() * h * 0.3;
+                for (let i = 0; i < 30; i++) {
+                    const alpha = 1 - (i / 30);
+                    ctx.beginPath();
+                    ctx.arc(mx + i * 3, my + i * 2, 2 - i * 0.06, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 200, 100, ${alpha * 0.5})`;
+                    ctx.fill();
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+        animate();
+    })();
+
+    // ─── SOCKET ───
+    let socket = io();
+    let loggedIn = false;
+
+    // ─── LOGIN ───
+    function login() {
+        const pass = document.getElementById('adminPass').value;
+        fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: pass })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('loginOverlay').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                loggedIn = true;
+                loadTokens();
+                loadStats();
+                setInterval(loadStats, 3000);
+            } else {
+                alert('❌ Wrong password!');
+            }
+        });
+    }
+
+    function logout() {
+        fetch('/api/logout', { method: 'POST' })
+        .then(() => {
+            loggedIn = false;
+            document.getElementById('loginOverlay').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+        });
+    }
+
+    // ─── TOKENS ───
+    function loadTokens() {
+        fetch('/api/tokens')
+        .then(r => r.json())
+        .then(tokens => {
+            const list = document.getElementById('tokenList');
+            if (!tokens || tokens.length === 0) {
+                list.innerHTML = '<div style="color:#444; text-align:center; padding:20px;">No tokens loaded.</div>';
+                return;
+            }
+            list.innerHTML = tokens.map(t => `
+                <div class="token-item">
+                    <span class="token">${t.token ? t.token.substring(0, 20) + '...' : 'Invalid'}</span>
+                    <span style="color:#888;">${t.owner || 'default'}</span>
+                    <span class="status ${t.enabled ? 'enabled' : 'disabled'}">${t.enabled ? 'ON' : 'OFF'}</span>
+                    <div>
+                        <button class="btn small" onclick="toggleToken(${t.id})">↕</button>
+                        <button class="btn danger small" onclick="deleteToken(${t.id})">✕</button>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('tokenCount').textContent = tokens.length;
+            document.getElementById('statTokens').textContent = tokens.filter(t => t.enabled).length;
+        });
+    }
+
+    function addToken() {
+        const token = document.getElementById('tokenInput').value.trim();
+        const owner = document.getElementById('ownerInput').value.trim() || 'default';
+        if (!token) return alert('Enter a token!');
+        fetch('/api/tokens/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, owner })
+        })
+        .then(r => r.json())
+        .then(() => {
+            document.getElementById('tokenInput').value = '';
+            loadTokens();
+            alert('✅ Token added!');
+        });
+    }
+
+    function deleteToken(id) {
+        if (!confirm('Delete this token?')) return;
+        fetch('/api/tokens/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+        })
+        .then(() => loadTokens());
+    }
+
+    function toggleToken(id) {
+        fetch('/api/tokens/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+        })
+        .then(() => loadTokens());
+    }
+
+    function startAllTokens() {
+        fetch('/api/tokens/start', { method: 'POST' })
+        .then(() => alert('🚀 Starting tokens...'));
+    }
+
+    function stopAllTokens() {
+        if (!confirm('Stop all bots?')) return;
+        fetch('/api/tokens/stop', { method: 'POST' })
+        .then(() => alert('🛑 All bots stopped'));
+    }
+
+    function refreshTokens() {
+        fetch('/api/tokens/refresh', { method: 'POST' })
+        .then(() => alert('🔄 Refreshing...'));
+    }
+
+    // ─── STATS ───
+    function loadStats() {
+        fetch('/api/stats')
+        .then(r => r.json())
+        .then(stats => {
+            const online = stats.online || stats.bots || 0;
+            document.getElementById('onlineCount').textContent = online;
+            document.getElementById('statBots').textContent = online;
+            document.getElementById('vcCount').textContent = stats.connected || 0;
+            document.getElementById('statVC').textContent = stats.connected || 0;
+            
+            const dom = stats.domination ? '🔥 ACTIVE' : 'OFF';
+            document.getElementById('dominationStatus').textContent = dom;
+            document.getElementById('statDomination').textContent = dom;
+            document.getElementById('statDomination').style.color = stats.domination ? '#ff0040' : '#666';
+            
+            const spam = stats.spam ? '🔥 ACTIVE' : 'OFF';
+            document.getElementById('statSpam').textContent = spam;
+            document.getElementById('statSpam').style.color = stats.spam ? '#ff8800' : '#666';
+            
+            document.getElementById('statVolume').textContent = (stats.volume || 100) + '%';
+            document.getElementById('currentTrack').textContent = stats.currentTrack || 'No track';
+        });
+    }
+
+    // ─── SOCKET ───
+    socket.on('stats', (data) => {
+        if (data.online !== undefined) {
+            document.getElementById('onlineCount').textContent = data.online;
+            document.getElementById('statBots').textContent = data.online;
+        }
+        if (data.connected !== undefined) {
+            document.getElementById('vcCount').textContent = data.connected;
+            document.getElementById('statVC').textContent = data.connected;
+        }
+        if (data.domination !== undefined) {
+            const dom = data.domination ? '🔥 ACTIVE' : 'OFF';
+            document.getElementById('dominationStatus').textContent = dom;
+            document.getElementById('statDomination').textContent = dom;
+            document.getElementById('statDomination').style.color = data.domination ? '#ff0040' : '#666';
+        }
+        if (data.spam !== undefined) {
+            const spam = data.spam ? '🔥 ACTIVE' : 'OFF';
+            document.getElementById('statSpam').textContent = spam;
+            document.getElementById('statSpam').style.color = data.spam ? '#ff8800' : '#666';
+        }
+        if (data.volume !== undefined) {
+            document.getElementById('statVolume').textContent = data.volume + '%';
+        }
+        if (data.currentTrack) {
+            document.getElementById('currentTrack').textContent = data.currentTrack;
+        }
+    });
+
+    socket.on('command_result', (data) => {
+        const output = document.getElementById('commandOutput');
+        const time = new Date().toLocaleTimeString();
+        const color = data.result && data.result.includes('✅') ? 'success' : '';
+        output.innerHTML += `<div class="${color}">[${time}] ${data.command}: ${data.result || 'Done'}</div>`;
+        output.scrollTop = output.scrollHeight;
+    });
+
+    // ─── COMMANDS ───
+    function runCommand(cmd) {
+        const channel = document.getElementById('cmdChannel').value.trim();
+        const target = document.getElementById('cmdTarget').value.trim();
+        const extra = document.getElementById('cmdExtra').value.trim();
+        
+        let endpoint = '', body = {};
+        
+        switch(cmd) {
+            case 'dominate':
+                if (!channel) return alert('Channel ID required');
+                endpoint = '/api/domination/start'; body = { channelId: channel }; break;
+            case 'stopdom':
+                endpoint = '/api/domination/stop'; body = {}; break;
+            case 'sjoin':
+                if (!extra) return alert('Invite required');
+                endpoint = '/api/sjoin'; body = { invite: extra }; break;
+            case 'sleave':
+                if (!extra) return alert('Server ID required');
+                endpoint = '/api/sleave'; body = { serverId: extra }; break;
+            case 'sleaveall':
+                endpoint = '/api/sleaveall'; body = {}; break;
+            case 'name':
+                if (!extra) return alert('Name required');
+                endpoint = '/api/name'; body = { name: extra }; break;
+            case 'pass':
+                if (!channel || !target) return alert('Channel ID and target required');
+                endpoint = '/api/password'; body = { channelId: channel, target: target, password: extra || 'BYPASSED' }; break;
+            case 'ssend':
+                if (!channel || !extra) return alert('Channel ID and message required');
+                endpoint = '/api/ssend'; body = { channelId: channel, message: extra }; break;
+            case 'spam':
+                if (!channel || !extra) return alert('Channel ID and messages required');
+                endpoint = '/api/spam/start'; body = { channelId: channel, messages: extra }; break;
+            case 'stopspam':
+                endpoint = '/api/spam/stop'; body = {}; break;
+            case 'joinvc':
+                if (!channel) return alert('Channel ID required');
+                endpoint = '/api/joinvc'; body = { channelId: channel }; break;
+            case 'play':
+                if (!extra) return alert('URL required');
+                endpoint = '/api/play'; body = { url: extra }; break;
+        }
+        
+        if (endpoint) {
+            const output = document.getElementById('commandOutput');
+            output.innerHTML += `<div style="color:#888;">[${new Date().toLocaleTimeString()}] Executing ${cmd}...</div>`;
+            fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    output.innerHTML += `<div class="success">[${new Date().toLocaleTimeString()}] ✅ ${cmd} done</div>`;
+                } else {
+                    output.innerHTML += `<div class="error">[${new Date().toLocaleTimeString()}] ❌ ${cmd} failed</div>`;
+                }
+                output.scrollTop = output.scrollHeight;
+            });
+        }
+    }
+
+    // ─── AUDIO ───
+    function sendControl(action) {
+        fetch('/api/control', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action })
+        })
+        .then(() => {
+            const output = document.getElementById('commandOutput');
+            output.innerHTML += `<div style="color:#888;">[${new Date().toLocaleTimeString()}] 🎵 ${action}</div>`;
+            output.scrollTop = output.scrollHeight;
+        });
+    }
+
+    function setVolume() {
+        const vol = document.getElementById('volumeInput').value;
+        fetch('/api/volume', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ volume: vol })
+        })
+        .then(() => {
+            const output = document.getElementById('commandOutput');
+            output.innerHTML += `<div style="color:#888;">[${new Date().toLocaleTimeString()}] 🔊 Volume ${vol}%</div>`;
+            output.scrollTop = output.scrollHeight;
+        });
+    }
+
+    function setMax() {
+        document.getElementById('volumeInput').value = 10000;
+        setVolume();
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && document.activeElement.id === 'adminPass') login();
+    });
+
+    console.log('👑 RINTU SUITE LOADED');
+</script>
 </body>
 </html>
