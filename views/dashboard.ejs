@@ -176,6 +176,8 @@
         .btn.danger:hover { background: rgba(255,0,64,0.15); }
         .btn.primary { border-color: rgba(255,136,0,0.3); color: #ff8800; }
         .btn.primary:hover { background: rgba(255,136,0,0.15); }
+        .btn.gold { border-color: rgba(255,204,0,0.3); color: #ffcc00; }
+        .btn.gold:hover { background: rgba(255,204,0,0.15); }
         .btn.small { padding: 4px 10px; font-size: 0.7rem; }
 
         .cmd-btn {
@@ -194,6 +196,8 @@
         .cmd-btn:hover { background: rgba(0,255,200,0.15); }
         .cmd-btn.danger { border-color: rgba(255,0,64,0.3); color: #ff0040; }
         .cmd-btn.danger:hover { background: rgba(255,0,64,0.15); }
+        .cmd-btn.gold { border-color: rgba(255,204,0,0.3); color: #ffcc00; }
+        .cmd-btn.gold:hover { background: rgba(255,204,0,0.15); }
 
         .input-group {
             display: flex;
@@ -201,7 +205,7 @@
             flex-wrap: wrap;
             margin: 8px 0;
         }
-        .input-group input {
+        .input-group input, .input-group textarea {
             background: rgba(0,0,0,0.5);
             color: #00ffc8;
             border: 1px solid rgba(0,255,200,0.12);
@@ -213,8 +217,8 @@
             flex: 1;
             min-width: 140px;
         }
-        .input-group input:focus { border-color: rgba(0,255,200,0.3); }
-        .input-group input::placeholder { color: #444; }
+        .input-group input:focus, .input-group textarea:focus { border-color: rgba(0,255,200,0.3); }
+        .input-group input::placeholder, .input-group textarea::placeholder { color: #444; }
 
         .token-list { max-height: 300px; overflow-y: auto; margin-top: 10px; }
         .token-item {
@@ -256,6 +260,7 @@
         }
         #commandOutput .success { color: #00ffc8; }
         #commandOutput .error { color: #ff0040; }
+        #commandOutput .gold { color: #ffcc00; }
 
         .hidden { display: none !important; }
         .flex { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
@@ -263,10 +268,51 @@
         ::-webkit-scrollbar { width: 4px; background: transparent; }
         ::-webkit-scrollbar-thumb { background: #00ffc8; border-radius: 4px; }
 
+        /* KeyAuth Styles */
+        .key-item {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 8px;
+            padding: 6px 8px;
+            border-bottom: 1px solid rgba(255,204,0,0.05);
+            font-size: 0.7rem;
+            align-items: center;
+        }
+        .key-item .key-value { color: #ffcc00; font-family: monospace; font-size: 0.65rem; word-break: break-all; }
+        .key-item .key-owner { color: #00ffc8; }
+        .key-item .key-expires { color: #ff8800; }
+        .key-item .key-expires.expired { color: #ff0040; }
+
+        #keyDisplay {
+            background: rgba(0,0,0,0.5);
+            padding: 12px;
+            border-radius: 8px;
+            margin: 8px 0;
+            border: 1px solid rgba(255,204,0,0.1);
+        }
+        #keyList {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .key-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 8px;
+            padding: 8px;
+            background: rgba(255,204,0,0.05);
+            border-radius: 6px;
+            font-size: 0.7rem;
+            color: #888;
+            font-weight: bold;
+        }
+
         @media (max-width: 768px) {
             .header h1 { font-size: 2.2rem; }
             .login-box { min-width: 300px; padding: 30px 20px; }
             .grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+            .key-item { grid-template-columns: 1fr 1fr; gap: 4px; }
+            .key-header { display: none; }
         }
     </style>
 </head>
@@ -300,6 +346,7 @@
                 <span>🤖 <span id="onlineCount">0</span> bots</span>
                 <span>📦 <span id="tokenCount">0</span> tokens</span>
                 <span>🔊 <span id="vcCount">0</span> VC</span>
+                <span>🔑 <span id="keyCount">0</span> keys</span>
                 <span>👑 <span id="dominationStatus" style="color:#888;">OFF</span></span>
             </div>
             <button class="btn danger small" onclick="logout()">🔒 LOGOUT</button>
@@ -318,7 +365,7 @@
 
     <!-- TOKEN MANAGEMENT -->
     <div class="glass">
-        <div class="flex" style="justify-content:space-between;">
+        <div class="flex" style="justify-content:space-between; flex-wrap:wrap;">
             <h2 style="color:#ff0040; font-size:1.2rem;">📁 TOKEN MANAGEMENT</h2>
             <div class="flex">
                 <button class="btn primary small" onclick="startAllTokens()">▶ START</button>
@@ -332,6 +379,66 @@
             <button class="btn primary" onclick="addToken()">➕ ADD</button>
         </div>
         <div class="token-list" id="tokenList"></div>
+    </div>
+
+    <!-- KEYAUTH + MULTI-TOKEN -->
+    <div class="glass" style="border-color: rgba(255, 204, 0, 0.3);">
+        <div class="flex" style="justify-content:space-between; flex-wrap:wrap;">
+            <h2 style="color: #ffcc00; font-size:1.2rem;">🔑 KEYAUTH & MULTI-TOKEN</h2>
+            <div class="flex">
+                <button class="btn gold small" onclick="generateKey()">✨ GENERATE KEY</button>
+                <button class="btn gold small" onclick="listAllKeys()">📋 LIST KEYS</button>
+                <button class="btn primary small" onclick="toggleBulkAdd()">📦 BULK ADD</button>
+            </div>
+        </div>
+        
+        <!-- Key Generation -->
+        <div class="input-group">
+            <input type="text" id="keyOwnerInput" placeholder="Key Owner Name" style="flex:1;">
+            <input type="number" id="keyDaysInput" value="30" placeholder="Days Valid" style="width:100px;">
+            <button class="btn gold" onclick="generateKey()">✨ GENERATE KEY</button>
+        </div>
+        
+        <!-- Key Display -->
+        <div id="keyDisplay" style="display:none;">
+            <div class="flex" style="justify-content:space-between; flex-wrap:wrap;">
+                <div>
+                    <span style="color:#888;">🔑 Generated Key:</span>
+                    <span id="generatedKey" style="color:#ffcc00; font-family:monospace; font-size:1.1rem; font-weight:bold;"></span>
+                </div>
+                <div>
+                    <span style="color:#888;">Owner:</span>
+                    <span id="keyOwnerDisplay" style="color:#00ffc8;"></span>
+                    <span style="color:#888; margin-left:15px;">Expires:</span>
+                    <span id="keyExpiresDisplay" style="color:#ff8800;"></span>
+                </div>
+            </div>
+            <button class="btn small" onclick="copyKey()" style="margin-top:8px;">📋 COPY KEY</button>
+        </div>
+        
+        <!-- Key List -->
+        <div id="keyList" style="display:none;">
+            <div class="key-header">
+                <span>KEY</span>
+                <span>OWNER</span>
+                <span>CREATED</span>
+                <span>EXPIRES</span>
+            </div>
+            <div id="keyListItems"></div>
+        </div>
+        
+        <!-- Bulk Add -->
+        <div id="bulkAddSection" style="display:none; margin-top:10px; border-top:1px solid rgba(255,204,0,0.1); padding-top:10px;">
+            <div class="input-group">
+                <textarea id="bulkTokensInput" placeholder="Enter tokens one per line&#10;TOKEN_1&#10;TOKEN_2&#10;TOKEN_3" style="flex:3; min-height:100px;"></textarea>
+                <div style="display:flex; flex-direction:column; gap:8px; flex:1;">
+                    <input type="text" id="bulkOwnerInput" placeholder="Owner Name (optional)">
+                    <button class="btn primary" onclick="processBulkTokens()">📦 ADD ALL</button>
+                    <button class="btn small" onclick="document.getElementById('bulkAddSection').style.display='none'">✕ CLOSE</button>
+                </div>
+            </div>
+            <div id="bulkProgress" style="color:#888; font-size:0.8rem; margin-top:5px;"></div>
+        </div>
     </div>
 
     <!-- COMMANDS + AUDIO -->
@@ -357,7 +464,7 @@
                 <button class="cmd-btn" onclick="runCommand('play')">▶️ PLAY</button>
             </div>
             <div class="input-group">
-                <input type="text" id="cmdExtra" placeholder="Extra param" style="flex:2;">
+                <input type="text" id="cmdExtra" placeholder="Extra param (invite/name/message/url)" style="flex:2;">
             </div>
             <div id="commandOutput"></div>
         </div>
@@ -407,6 +514,20 @@
             });
         }
 
+        let meteors = [];
+        for (let i = 0; i < 3; i++) {
+            meteors.push({
+                x: Math.random() * w * 0.8,
+                y: Math.random() * h * 0.3,
+                speedX: (Math.random() * 6 + 3) * (Math.random() > 0.5 ? 1 : -1),
+                speedY: Math.random() * 4 + 2,
+                trail: [],
+                active: true,
+                life: 100,
+                maxLife: 100
+            });
+        }
+
         function animate() {
             ctx.clearRect(0, 0, w, h);
             const grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w);
@@ -415,6 +536,7 @@
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, w, h);
 
+            // Snow
             particles.forEach(p => {
                 p.y += p.speed;
                 p.x += p.wind + Math.sin(p.y / 100) * 0.2;
@@ -428,16 +550,47 @@
             });
 
             // Meteors
-            if (Math.random() < 0.005) {
-                const mx = Math.random() * w * 0.8;
-                const my = Math.random() * h * 0.3;
-                for (let i = 0; i < 30; i++) {
-                    const alpha = 1 - (i / 30);
-                    ctx.beginPath();
-                    ctx.arc(mx + i * 3, my + i * 2, 2 - i * 0.06, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(255, 200, 100, ${alpha * 0.5})`;
-                    ctx.fill();
+            meteors.forEach(m => {
+                if (!m.active) return;
+                m.trail.push({ x: m.x, y: m.y });
+                if (m.trail.length > 25) m.trail.shift();
+                m.x += m.speedX;
+                m.y += m.speedY;
+                m.life--;
+                if (m.life < 0 || m.x > w + 50 || m.x < -50 || m.y > h + 50) {
+                    m.active = false;
+                    setTimeout(() => {
+                        m.x = Math.random() * w * 0.8;
+                        m.y = Math.random() * h * 0.3;
+                        m.speedX = (Math.random() * 6 + 3) * (Math.random() > 0.5 ? 1 : -1);
+                        m.speedY = Math.random() * 4 + 2;
+                        m.trail = [];
+                        m.active = true;
+                        m.life = 100;
+                        m.maxLife = 100;
+                    }, Math.random() * 3000 + 2000);
                 }
+                if (m.trail.length > 2) {
+                    const alpha = m.life / m.maxLife;
+                    ctx.beginPath();
+                    ctx.moveTo(m.trail[0].x, m.trail[0].y);
+                    for (let i = 1; i < m.trail.length; i++) {
+                        ctx.lineTo(m.trail[i].x, m.trail[i].y);
+                    }
+                    ctx.strokeStyle = `rgba(255, 200, 100, ${alpha * 0.6})`;
+                    ctx.lineWidth = 1.5;
+                    ctx.shadowColor = 'rgba(255, 200, 100, 0.2)';
+                    ctx.shadowBlur = 10;
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                }
+            });
+
+            // Lightning flash
+            if (Math.random() < 0.002) {
+                document.body.style.transition = 'background 0.05s';
+                document.body.style.background = 'rgba(255,255,255,0.05)';
+                setTimeout(() => { document.body.style.background = ''; }, 100);
             }
 
             requestAnimationFrame(animate);
@@ -559,6 +712,108 @@
         .then(() => alert('🔄 Refreshing...'));
     }
 
+    // ─── KEYAUTH ───
+    function generateKey() {
+        const owner = document.getElementById('keyOwnerInput').value.trim() || 'default';
+        const days = parseInt(document.getElementById('keyDaysInput').value) || 30;
+        
+        fetch('/api/keys/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ owner, days })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('generatedKey').textContent = data.key;
+                document.getElementById('keyOwnerDisplay').textContent = data.owner;
+                document.getElementById('keyExpiresDisplay').textContent = data.days + ' days';
+                document.getElementById('keyDisplay').style.display = 'block';
+                document.getElementById('keyList').style.display = 'none';
+                
+                navigator.clipboard?.writeText(data.key);
+                
+                const output = document.getElementById('commandOutput');
+                output.innerHTML += `<div class="gold">[${new Date().toLocaleTimeString()}] 🔑 Key generated: ${data.key}</div>`;
+                output.scrollTop = output.scrollHeight;
+            }
+        });
+    }
+
+    function copyKey() {
+        const key = document.getElementById('generatedKey').textContent;
+        navigator.clipboard?.writeText(key);
+        const output = document.getElementById('commandOutput');
+        output.innerHTML += `<div class="success">[${new Date().toLocaleTimeString()}] 📋 Key copied!</div>`;
+        output.scrollTop = output.scrollHeight;
+    }
+
+    function listAllKeys() {
+        fetch('/api/keys/list')
+        .then(r => r.json())
+        .then(data => {
+            const list = document.getElementById('keyListItems');
+            const container = document.getElementById('keyList');
+            
+            if (!data.keys || data.keys.length === 0) {
+                list.innerHTML = '<div style="color:#444; text-align:center; padding:20px;">No keys generated yet.</div>';
+                container.style.display = 'block';
+                return;
+            }
+            
+            list.innerHTML = data.keys.map(k => {
+                const expired = new Date(k.expires) < new Date();
+                return `
+                    <div class="key-item">
+                        <span class="key-value">${k.key}</span>
+                        <span class="key-owner">${k.owner}</span>
+                        <span style="color:#666; font-size:0.6rem;">${k.created}</span>
+                        <span class="key-expires ${expired ? 'expired' : ''}">${expired ? '❌ EXPIRED' : k.expires}</span>
+                    </div>
+                `;
+            }).join('');
+            
+            container.style.display = 'block';
+            document.getElementById('keyDisplay').style.display = 'none';
+        });
+    }
+
+    function toggleBulkAdd() {
+        const section = document.getElementById('bulkAddSection');
+        section.style.display = section.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function processBulkTokens() {
+        const text = document.getElementById('bulkTokensInput').value;
+        const owner = document.getElementById('bulkOwnerInput').value.trim() || 'bulk';
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 10);
+        
+        if (lines.length === 0) {
+            alert('❌ No valid tokens found!');
+            return;
+        }
+        
+        if (!confirm(`Add ${lines.length} tokens with owner "${owner}"?`)) return;
+        
+        const progress = document.getElementById('bulkProgress');
+        progress.textContent = `⏳ Adding ${lines.length} tokens...`;
+        progress.style.color = '#ff8800';
+        
+        fetch('/api/tokens/bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tokens: lines, owner })
+        })
+        .then(r => r.json())
+        .then(data => {
+            progress.textContent = `✅ Added ${data.added}/${data.total} tokens! (${data.failed || 0} failed)`;
+            progress.style.color = data.added === data.total ? '#00ffc8' : '#ff8800';
+            document.getElementById('bulkTokensInput').value = '';
+            loadTokens();
+            loadStats();
+        });
+    }
+
     // ─── STATS ───
     function loadStats() {
         fetch('/api/stats')
@@ -569,6 +824,7 @@
             document.getElementById('statBots').textContent = online;
             document.getElementById('vcCount').textContent = stats.connected || 0;
             document.getElementById('statVC').textContent = stats.connected || 0;
+            document.getElementById('keyCount').textContent = stats.keyCount || 0;
             
             const dom = stats.domination ? '🔥 ACTIVE' : 'OFF';
             document.getElementById('dominationStatus').textContent = dom;
@@ -593,6 +849,9 @@
         if (data.connected !== undefined) {
             document.getElementById('vcCount').textContent = data.connected;
             document.getElementById('statVC').textContent = data.connected;
+        }
+        if (data.keyCount !== undefined) {
+            document.getElementById('keyCount').textContent = data.keyCount;
         }
         if (data.domination !== undefined) {
             const dom = data.domination ? '🔥 ACTIVE' : 'OFF';
@@ -723,6 +982,8 @@
     });
 
     console.log('👑 RINTU SUITE LOADED');
+    console.log('🔑 KEYAUTH SYSTEM ACTIVE');
+    console.log('📦 INFINITE TOKENS SUPPORT');
 </script>
 </body>
 </html>
