@@ -1,4 +1,4 @@
-console.log('👑 RINTU SUITE v8.0 MASTER STARTING...');
+console.log('👑 RINTU SUITE v8.0 STARTING...');
 console.log('[BOOT] Node version:', process.version);
 
 require('dotenv').config();
@@ -107,17 +107,20 @@ function validateKey(key) {
 loadTokens();
 loadKeys();
 
-// ─── LOAD SELFBOT MODULES WITH PROPER ERROR HANDLING ───
+// ─── LOAD SELFBOT MODULES SAFELY ───
 let Client, joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, StreamType;
 let youtubedl, axios;
 let selfbotLoaded = false;
 
 try {
     console.log('[BOOT] Loading Discord modules...');
+    
+    // Load discord.js-selfbot-v13
     const discord = require('discord.js-selfbot-v13');
     Client = discord.Client;
     console.log('[BOOT] ✅ discord.js-selfbot-v13 loaded');
     
+    // Load @discordjs/voice
     const voice = require('@discordjs/voice');
     joinVoiceChannel = voice.joinVoiceChannel;
     createAudioPlayer = voice.createAudioPlayer;
@@ -126,15 +129,16 @@ try {
     StreamType = voice.StreamType;
     console.log('[BOOT] ✅ @discordjs/voice loaded');
     
+    // Load youtube-dl-exec
     youtubedl = require('youtube-dl-exec');
     axios = require('axios');
     console.log('[BOOT] ✅ youtube-dl-exec loaded');
     
     selfbotLoaded = true;
-    console.log('[BOOT] ✅ ALL SELFBOT MODULES LOADED!');
+    console.log('[BOOT] ✅ ALL MODULES LOADED SUCCESSFULLY!');
 } catch (e) {
-    console.log('[BOOT] ⚠️ Selfbot modules error:', e.message);
-    console.log('[BOOT] ⚠️ VC features disabled');
+    console.log('[BOOT] ⚠️ Module load error:', e.message);
+    console.log('[BOOT] ⚠️ Selfbot features will be disabled');
     selfbotLoaded = false;
 }
 
@@ -193,7 +197,7 @@ app.get('/', (req, res) => {
         res.send(`
             <html><body style="background:#0a0a0a;color:#00ff41;font-family:monospace;padding:40px;">
                 <h1 style="color:#ff0040;">👑 RINTU SUITE</h1>
-                <p>✅ Server running! Error: ${err.message}</p>
+                <p>✅ Server running!</p>
                 <p><a href="/test" style="color:#00ff41;">Test Route</a></p>
             </body></html>
         `);
@@ -460,7 +464,16 @@ async function startBots() {
         const t = enabled[i];
         try {
             console.log('[BOTS] Logging in', i + 1, '/', enabled.length);
-            const client = new Client({ checkUpdate: false });
+            const client = new Client({ 
+                checkUpdate: false,
+                ws: {
+                    properties: {
+                        $browser: 'Discord Chrome',
+                        $device: 'Windows',
+                        $os: 'Windows'
+                    }
+                }
+            });
             
             client.on('ready', () => {
                 console.log('[BOTS] ✅', client.user?.tag || 'Unknown', 'online');
@@ -535,6 +548,7 @@ async function joinVoiceChannel(channelId) {
             connections.set(i, conn);
             players.set(i, player);
             connected++;
+            console.log('[VC] Bot', i+1, 'joined');
         } catch (e) {
             console.log('[VC] Error:', e.message);
         }
@@ -749,8 +763,8 @@ async function playAudio(url) {
         return;
     }
     
-    if (url.includes('youtube.com') || url.includes('youtu.be')) {
-        try {
+    try {
+        if (url.includes('youtube.com') || url.includes('youtu.be')) {
             const result = await youtubedl(url, { 
                 dumpSingleJson: true, 
                 noPlaylist: true, 
@@ -759,15 +773,15 @@ async function playAudio(url) {
             currentUrl = result.url;
             currentTitle = result.title || "YouTube Audio";
             startFFmpegStream(currentUrl);
-        } catch(e) {
-            console.log('[PLAY] Error:', e.message);
+        } else {
+            currentUrl = url;
+            currentTitle = "Direct Audio";
+            startFFmpegStream(url);
         }
-    } else {
-        currentUrl = url;
-        currentTitle = "Direct Audio";
-        startFFmpegStream(url);
+        io.emit('command_result', { command: 'play', result: `▶️ Playing: ${currentTitle}` });
+    } catch (e) {
+        io.emit('command_result', { command: 'play', result: `❌ Error: ${e.message}` });
     }
-    io.emit('command_result', { command: 'play', result: `▶️ Playing: ${currentTitle}` });
 }
 
 function startFFmpegStream(input) {
@@ -816,8 +830,8 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`
 ╔══════════════════════════════════════════════════════════════╗
-║           👑 RINTU SUITE v8.0 MASTER 👑                    ║
-║           🔥 ALL FEATURES WORKING                          ║
+║           👑 RINTU SUITE v8.0 👑                           ║
+║           🔥 FULLY WORKING                                 ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  📦 Tokens: ${tokens.length}                                ║
 ║  ✅ Enabled: ${getEnabledTokens().length}                  ║
@@ -827,18 +841,6 @@ server.listen(PORT, '0.0.0.0', () => {
 ║  🔑 Admin: ${process.env.ADMIN_PASS || 'RINTU_2026'}       ║
 ╚══════════════════════════════════════════════════════════════╝
     `);
-    
-    console.log('\n📋 AVAILABLE COMMANDS:');
-    console.log('  📁 Token Management: Add, Delete, Toggle, Bulk Add');
-    console.log('  🔑 KeyAuth: Generate Keys, List Keys, Validate Keys');
-    console.log('  🔊 VC: JOIN VC, PLAY Audio, Control Audio');
-    console.log('  🔗 SJOIN: Join servers with all bots');
-    console.log('  🚪 SLEAVE: Leave servers with all bots');
-    console.log('  📛 NAME: Change all bot names');
-    console.log('  📨 SSEND: Send messages from all bots');
-    console.log('  💬 SPAM: Spam messages from all bots');
-    console.log('  👑 DOMINATION: Dominate voice channels');
-    console.log('\n📌 For VC features, make sure bots are STARTED first!\n');
     
     if (selfbotLoaded && getEnabledTokens().length > 0) {
         console.log('[🚀 AUTO-START] Launching bots...');
