@@ -1,4 +1,5 @@
 console.log('👑 RINTU SUITE v8.0 MASTER STARTING...');
+console.log('[BOOT] Node version:', process.version);
 
 require('dotenv').config();
 const express = require('express');
@@ -106,7 +107,7 @@ function validateKey(key) {
 loadTokens();
 loadKeys();
 
-// ─── LOAD SELFBOT MODULES WITH ERROR HANDLING ───
+// ─── LOAD SELFBOT MODULES WITH PROPER ERROR HANDLING ───
 let Client, joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, StreamType;
 let youtubedl, axios;
 let selfbotLoaded = false;
@@ -193,6 +194,7 @@ app.get('/', (req, res) => {
             <html><body style="background:#0a0a0a;color:#00ff41;font-family:monospace;padding:40px;">
                 <h1 style="color:#ff0040;">👑 RINTU SUITE</h1>
                 <p>✅ Server running! Error: ${err.message}</p>
+                <p><a href="/test" style="color:#00ff41;">Test Route</a></p>
             </body></html>
         `);
     }
@@ -205,7 +207,8 @@ app.get('/test', (req, res) => {
         tokens: tokens.length,
         keys: keys.length,
         selfbotLoaded: selfbotLoaded,
-        botsOnline: selfbotLoaded ? clients.filter(c => c?.user).length : 0
+        botsOnline: selfbotLoaded ? clients.filter(c => c?.user).length : 0,
+        nodeVersion: process.version
     });
 });
 
@@ -777,7 +780,8 @@ function startFFmpegStream(input) {
     
     const filterStr = filters.length ? filters.join(',') : 'highpass=f=60';
     
-    currentFFmpegProcess = require('child_process').spawn("ffmpeg", [
+    const { spawn } = require('child_process');
+    currentFFmpegProcess = spawn("ffmpeg", [
         "-reconnect", "1", "-reconnect_streamed", "1",
         "-i", input,
         "-filter:a", filterStr,
