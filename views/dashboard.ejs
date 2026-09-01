@@ -44,7 +44,7 @@
         
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 15px;
             margin: 15px 0;
         }
@@ -66,6 +66,11 @@
         }
         .stat .value.danger {
             background: linear-gradient(135deg, #ff0040, #ff4400);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat .value.gold {
+            background: linear-gradient(135deg, #ff8800, #ffcc00);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -184,6 +189,16 @@
         .token-item .status.on { background: rgba(0,255,200,0.15); color: #00ffc8; }
         .token-item .status.off { background: rgba(255,0,64,0.15); color: #ff0040; }
         
+        .key-item {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 8px;
+            padding: 6px 8px;
+            border-bottom: 1px solid rgba(255,204,0,0.05);
+            font-size: 0.7rem;
+        }
+        .key-item .k { color: #ffcc00; font-family: monospace; }
+        
         .cmd-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
@@ -223,16 +238,6 @@
         #output .err { color: #ff0040; }
         #output .gold { color: #ffcc00; }
         
-        .key-item {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr;
-            gap: 8px;
-            padding: 6px 8px;
-            border-bottom: 1px solid rgba(255,204,0,0.05);
-            font-size: 0.7rem;
-        }
-        .key-item .k { color: #ffcc00; font-family: monospace; }
-        
         .flex { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
         .hidden { display: none !important; }
         
@@ -242,7 +247,7 @@
         @media (max-width: 768px) {
             .header h1 { font-size: 2rem; }
             .login-box { min-width: 300px; padding: 30px 20px; }
-            .grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+            .grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
         }
     </style>
 </head>
@@ -263,17 +268,17 @@
 
     <div class="header">
         <h1>👑 RINTU</h1>
-        <div class="sub">DOMINATION SUITE • v7.0</div>
+        <div class="sub">DOMINATION SUITE • v8.0</div>
     </div>
 
     <!-- TOP BAR -->
     <div class="glass" style="padding:12px 20px;">
         <div class="flex" style="justify-content:space-between;">
             <div class="flex">
-                <span>🤖 <span id="onlineCount">0</span></span>
-                <span>📦 <span id="tokenCount">0</span></span>
-                <span>🔑 <span id="keyCount">0</span></span>
-                <span>👑 <span id="domStatus" style="color:#888;">OFF</span></span>
+                <span>🤖 <span id="onlineCount">0</span> online</span>
+                <span>📦 <span id="tokenCount">0</span> tokens</span>
+                <span>🔑 <span id="keyCount">0</span> keys</span>
+                <span>🔊 <span id="vcCount">0</span> VC</span>
             </div>
             <button class="btn danger small" onclick="logout()">🔒 LOGOUT</button>
         </div>
@@ -283,7 +288,8 @@
     <div class="grid">
         <div class="stat"><div class="label">🤖 Online Bots</div><div class="value" id="statBots">0</div></div>
         <div class="stat"><div class="label">📦 Total Tokens</div><div class="value gold" id="statTokens">0</div></div>
-        <div class="stat"><div class="label">🔑 Keys</div><div class="value" id="statKeys">0</div></div>
+        <div class="stat"><div class="label">✅ Enabled</div><div class="value" id="statEnabled">0</div></div>
+        <div class="stat"><div class="label">🔑 Keys</div><div class="value gold" id="statKeys">0</div></div>
         <div class="stat"><div class="label">🔊 VC Connected</div><div class="value" id="statVC">0</div></div>
         <div class="stat"><div class="label">👑 Domination</div><div class="value danger" id="statDom">OFF</div></div>
         <div class="stat"><div class="label">💬 Spam</div><div class="value gold" id="statSpam">OFF</div></div>
@@ -333,10 +339,13 @@
         </div>
     </div>
 
-    <!-- COMMANDS -->
+    <!-- COMMANDS + AUDIO -->
     <div class="grid" style="grid-template-columns: 2fr 1fr;">
         <div class="glass" style="border-color:rgba(255,136,0,0.2);">
-            <h3 style="color:#ff8800;">⚔️ COMMANDS</h3>
+            <div class="flex" style="justify-content:space-between;">
+                <h3 style="color:#ff8800;">⚔️ COMMANDS</h3>
+                <span id="selfbotStatus" style="color:#888; font-size:0.7rem;"></span>
+            </div>
             <div class="input-group">
                 <input type="text" id="cmdChannel" placeholder="Channel ID">
                 <input type="text" id="cmdTarget" placeholder="Target">
@@ -355,7 +364,7 @@
                 <button class="cmd-btn" onclick="runCmd('play')">▶️ PLAY</button>
             </div>
             <div class="input-group">
-                <input type="text" id="cmdExtra" placeholder="Extra param" style="flex:2;">
+                <input type="text" id="cmdExtra" placeholder="Extra param (invite/name/message/url)" style="flex:2;">
             </div>
             <div id="output"></div>
         </div>
@@ -384,7 +393,7 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
     let socket = io();
-    let loggedIn = false;
+    let selfbotLoaded = false;
 
     // ─── LOGIN ───
     function login() {
@@ -399,10 +408,10 @@
             if (data.success) {
                 document.getElementById('loginOverlay').classList.add('hidden');
                 document.getElementById('dashboard').classList.remove('hidden');
-                loggedIn = true;
                 loadTokens();
                 loadStats();
                 setInterval(loadStats, 3000);
+                document.getElementById('selfbotStatus').textContent = '🔗 Connected';
             } else {
                 alert('❌ Wrong password!');
             }
@@ -412,7 +421,6 @@
     function logout() {
         fetch('/api/logout', { method: 'POST' })
         .then(() => {
-            loggedIn = false;
             document.getElementById('loginOverlay').classList.remove('hidden');
             document.getElementById('dashboard').classList.add('hidden');
         });
@@ -440,7 +448,8 @@
                 </div>
             `).join('');
             document.getElementById('tokenCount').textContent = data.length;
-            document.getElementById('statTokens').textContent = data.filter(t => t.enabled).length;
+            document.getElementById('statTokens').textContent = data.length;
+            document.getElementById('statEnabled').textContent = data.filter(t => t.enabled).length;
         });
     }
 
@@ -550,57 +559,54 @@
         });
     }
 
-    // ─── KEY VALIDATION (FOR FRIENDS) ───
-    function validateKey(key) {
-        fetch('/api/keys/validate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.valid) {
-                alert(`✅ Valid key! Owner: ${data.owner}`);
-            } else {
-                alert(`❌ ${data.message}`);
-            }
-        });
-    }
-
     // ─── STATS ───
     function loadStats() {
         fetch('/api/stats')
         .then(r => r.json())
         .then(s => {
-            document.getElementById('onlineCount').textContent = s.online || 0;
             document.getElementById('statBots').textContent = s.online || 0;
-            document.getElementById('statTokens').textContent = s.enabled || 0;
+            document.getElementById('onlineCount').textContent = s.online || 0;
+            document.getElementById('statTokens').textContent = s.tokens || 0;
+            document.getElementById('statEnabled').textContent = s.enabled || 0;
             document.getElementById('statKeys').textContent = s.keys || 0;
-            document.getElementById('statVC').textContent = s.connected || 0;
             document.getElementById('keyCount').textContent = s.keys || 0;
+            document.getElementById('statVC').textContent = s.connected || 0;
+            document.getElementById('vcCount').textContent = s.connected || 0;
             
             document.getElementById('statDom').textContent = s.domination ? '🔥 ACTIVE' : 'OFF';
             document.getElementById('statDom').style.color = s.domination ? '#ff0040' : '#666';
-            document.getElementById('domStatus').textContent = s.domination ? '🔥' : 'OFF';
             
             document.getElementById('statSpam').textContent = s.spam ? '🔥 ACTIVE' : 'OFF';
             document.getElementById('statSpam').style.color = s.spam ? '#ff8800' : '#666';
+            
+            selfbotLoaded = s.selfbotLoaded || false;
+            document.getElementById('selfbotStatus').textContent = selfbotLoaded ? '✅ Connected' : '❌ Not Loaded';
+            document.getElementById('selfbotStatus').style.color = selfbotLoaded ? '#00ffc8' : '#ff0040';
         });
     }
 
     // ─── SOCKET ───
     socket.on('stats', (data) => {
         if (data.online !== undefined) {
-            document.getElementById('onlineCount').textContent = data.online;
             document.getElementById('statBots').textContent = data.online;
+            document.getElementById('onlineCount').textContent = data.online;
         }
         if (data.connected !== undefined) {
             document.getElementById('statVC').textContent = data.connected;
+            document.getElementById('vcCount').textContent = data.connected;
         }
         if (data.keys !== undefined) {
-            document.getElementById('keyCount').textContent = data.keys;
             document.getElementById('statKeys').textContent = data.keys;
+            document.getElementById('keyCount').textContent = data.keys;
         }
+        if (data.tokens !== undefined) {
+            document.getElementById('statTokens').textContent = data.tokens;
+            document.getElementById('tokenCount').textContent = data.tokens;
+        }
+        if (data.enabled !== undefined) {
+            document.getElementById('statEnabled').textContent = data.enabled;
+        }
+        selfbotLoaded = data.selfbotLoaded || false;
     });
 
     socket.on('command_result', (data) => {
@@ -622,6 +628,11 @@
         const channel = document.getElementById('cmdChannel').value.trim();
         const extra = document.getElementById('cmdExtra').value.trim();
         const target = document.getElementById('cmdTarget').value.trim();
+        
+        if (!selfbotLoaded) {
+            addOutput('❌ Selfbot not loaded! VC features disabled.', 'err');
+            return;
+        }
         
         let endpoint = '', body = {};
         
@@ -678,6 +689,10 @@
 
     // ─── AUDIO ───
     function sendCtrl(action) {
+        if (!selfbotLoaded) {
+            addOutput('❌ Selfbot not loaded!', 'err');
+            return;
+        }
         fetch('/api/control', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -712,12 +727,11 @@
         }
     }
 
-    // ─── KEYBOARD ───
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && document.activeElement.id === 'adminPass') login();
     });
 
-    console.log('👑 RINTU SUITE v7.0 LOADED');
+    console.log('👑 RINTU SUITE v8.0 LOADED');
 </script>
 </body>
 </html>
