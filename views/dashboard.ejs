@@ -268,7 +268,6 @@
         ::-webkit-scrollbar { width: 4px; background: transparent; }
         ::-webkit-scrollbar-thumb { background: #00ffc8; border-radius: 4px; }
 
-        /* KeyAuth Styles */
         .key-item {
             display: grid;
             grid-template-columns: 2fr 1fr 1fr 1fr;
@@ -368,15 +367,15 @@
         <div class="flex" style="justify-content:space-between; flex-wrap:wrap;">
             <h2 style="color:#ff0040; font-size:1.2rem;">📁 TOKEN MANAGEMENT</h2>
             <div class="flex">
-                <button class="btn primary small" onclick="startAllTokens()">▶ START</button>
-                <button class="btn danger small" onclick="stopAllTokens()">⏹ STOP</button>
+                <button class="btn primary small" onclick="startAllTokens()">▶ START ALL</button>
+                <button class="btn danger small" onclick="stopAllTokens()">⏹ STOP ALL</button>
                 <button class="btn small" onclick="refreshTokens()">🔄 REFRESH</button>
             </div>
         </div>
         <div class="input-group">
             <input type="text" id="tokenInput" placeholder="Discord User Token" style="flex:3;">
             <input type="text" id="ownerInput" placeholder="Owner" style="flex:1;">
-            <button class="btn primary" onclick="addToken()">➕ ADD</button>
+            <button class="btn primary" onclick="addToken()">➕ ADD TOKEN</button>
         </div>
         <div class="token-list" id="tokenList"></div>
     </div>
@@ -536,7 +535,6 @@
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, w, h);
 
-            // Snow
             particles.forEach(p => {
                 p.y += p.speed;
                 p.x += p.wind + Math.sin(p.y / 100) * 0.2;
@@ -549,7 +547,6 @@
                 ctx.fill();
             });
 
-            // Meteors
             meteors.forEach(m => {
                 if (!m.active) return;
                 m.trail.push({ x: m.x, y: m.y });
@@ -586,7 +583,6 @@
                 }
             });
 
-            // Lightning flash
             if (Math.random() < 0.002) {
                 document.body.style.transition = 'background 0.05s';
                 document.body.style.background = 'rgba(255,255,255,0.05)';
@@ -641,7 +637,7 @@
         .then(tokens => {
             const list = document.getElementById('tokenList');
             if (!tokens || tokens.length === 0) {
-                list.innerHTML = '<div style="color:#444; text-align:center; padding:20px;">No tokens loaded.</div>';
+                list.innerHTML = '<div style="color:#444; text-align:center; padding:20px;">No tokens loaded. Add one above.</div>';
                 return;
             }
             list.innerHTML = tokens.map(t => `
@@ -657,24 +653,35 @@
             `).join('');
             document.getElementById('tokenCount').textContent = tokens.length;
             document.getElementById('statTokens').textContent = tokens.filter(t => t.enabled).length;
-        });
+        })
+        .catch(err => console.log('[ERROR] loadTokens:', err));
     }
 
     function addToken() {
         const token = document.getElementById('tokenInput').value.trim();
         const owner = document.getElementById('ownerInput').value.trim() || 'default';
-        if (!token) return alert('Enter a token!');
+        if (!token) return alert('❌ Enter a token!');
+        if (token.length < 10) return alert('❌ Token too short!');
+        
         fetch('/api/tokens/add', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token, owner })
         })
         .then(r => r.json())
-        .then(() => {
-            document.getElementById('tokenInput').value = '';
-            loadTokens();
-            alert('✅ Token added!');
-        });
+        .then(data => {
+            if (data.success) {
+                document.getElementById('tokenInput').value = '';
+                loadTokens();
+                loadStats();
+                const output = document.getElementById('commandOutput');
+                output.innerHTML += `<div class="success">[${new Date().toLocaleTimeString()}] ✅ Token added for ${owner}</div>`;
+                output.scrollTop = output.scrollHeight;
+            } else {
+                alert('❌ Failed to add token');
+            }
+        })
+        .catch(err => alert('❌ Error: ' + err.message));
     }
 
     function deleteToken(id) {
@@ -684,7 +691,10 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id })
         })
-        .then(() => loadTokens());
+        .then(() => {
+            loadTokens();
+            loadStats();
+        });
     }
 
     function toggleToken(id) {
@@ -693,29 +703,53 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id })
         })
-        .then(() => loadTokens());
+        .then(() => {
+            loadTokens();
+            loadStats();
+        });
     }
 
     function startAllTokens() {
         fetch('/api/tokens/start', { method: 'POST' })
-        .then(() => alert('🚀 Starting tokens...'));
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const output = document.getElementById('commandOutput');
+                output.innerHTML += `<div class="success">[${new Date().toLocaleTimeString()}] 🚀 Starting all tokens...</div>`;
+                output.scrollTop = output.scrollHeight;
+                loadStats();
+            }
+        });
     }
 
     function stopAllTokens() {
         if (!confirm('Stop all bots?')) return;
         fetch('/api/tokens/stop', { method: 'POST' })
-        .then(() => alert('🛑 All bots stopped'));
+        .then(() => {
+            const output = document.getElementById('commandOutput');
+            output.innerHTML += `<div class="error">[${new Date().toLocaleTimeString()}] 🛑 All bots stopped</div>`;
+            output.scrollTop = output.scrollHeight;
+            loadStats();
+        });
     }
 
     function refreshTokens() {
         fetch('/api/tokens/refresh', { method: 'POST' })
-        .then(() => alert('🔄 Refreshing...'));
+        .then(() => {
+            const output = document.getElementById('commandOutput');
+            output.innerHTML += `<div style="color:#888;">[${new Date().toLocaleTimeString()}] 🔄 Refreshing tokens...</div>`;
+            output.scrollTop = output.scrollHeight;
+            loadTokens();
+            loadStats();
+        });
     }
 
     // ─── KEYAUTH ───
     function generateKey() {
         const owner = document.getElementById('keyOwnerInput').value.trim() || 'default';
         const days = parseInt(document.getElementById('keyDaysInput').value) || 30;
+        
+        if (!owner) return alert('❌ Enter an owner name!');
         
         fetch('/api/keys/create', {
             method: 'POST',
@@ -731,21 +765,32 @@
                 document.getElementById('keyDisplay').style.display = 'block';
                 document.getElementById('keyList').style.display = 'none';
                 
-                navigator.clipboard?.writeText(data.key);
+                // Auto copy to clipboard
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(data.key);
+                }
                 
                 const output = document.getElementById('commandOutput');
                 output.innerHTML += `<div class="gold">[${new Date().toLocaleTimeString()}] 🔑 Key generated: ${data.key}</div>`;
                 output.scrollTop = output.scrollHeight;
+                
+                // Update key count
+                loadStats();
+            } else {
+                alert('❌ Failed to generate key');
             }
-        });
+        })
+        .catch(err => alert('❌ Error: ' + err.message));
     }
 
     function copyKey() {
         const key = document.getElementById('generatedKey').textContent;
-        navigator.clipboard?.writeText(key);
-        const output = document.getElementById('commandOutput');
-        output.innerHTML += `<div class="success">[${new Date().toLocaleTimeString()}] 📋 Key copied!</div>`;
-        output.scrollTop = output.scrollHeight;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(key);
+            const output = document.getElementById('commandOutput');
+            output.innerHTML += `<div class="success">[${new Date().toLocaleTimeString()}] 📋 Key copied to clipboard!</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
     }
 
     function listAllKeys() {
@@ -758,6 +803,7 @@
             if (!data.keys || data.keys.length === 0) {
                 list.innerHTML = '<div style="color:#444; text-align:center; padding:20px;">No keys generated yet.</div>';
                 container.style.display = 'block';
+                document.getElementById('keyDisplay').style.display = 'none';
                 return;
             }
             
@@ -775,12 +821,18 @@
             
             container.style.display = 'block';
             document.getElementById('keyDisplay').style.display = 'none';
-        });
+        })
+        .catch(err => console.log('[ERROR] listKeys:', err));
     }
 
     function toggleBulkAdd() {
         const section = document.getElementById('bulkAddSection');
-        section.style.display = section.style.display === 'none' ? 'block' : 'none';
+        if (section.style.display === 'none' || section.style.display === '') {
+            section.style.display = 'block';
+        } else {
+            section.style.display = 'none';
+        }
+        document.getElementById('bulkProgress').textContent = '';
     }
 
     function processBulkTokens() {
@@ -789,7 +841,7 @@
         const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 10);
         
         if (lines.length === 0) {
-            alert('❌ No valid tokens found!');
+            alert('❌ No valid tokens found! Make sure each token is on a new line.');
             return;
         }
         
@@ -806,11 +858,24 @@
         })
         .then(r => r.json())
         .then(data => {
-            progress.textContent = `✅ Added ${data.added}/${data.total} tokens! (${data.failed || 0} failed)`;
-            progress.style.color = data.added === data.total ? '#00ffc8' : '#ff8800';
-            document.getElementById('bulkTokensInput').value = '';
-            loadTokens();
-            loadStats();
+            if (data.success) {
+                progress.textContent = `✅ Added ${data.added}/${data.total} tokens! (${data.failed || 0} failed)`;
+                progress.style.color = data.added === data.total ? '#00ffc8' : '#ff8800';
+                document.getElementById('bulkTokensInput').value = '';
+                loadTokens();
+                loadStats();
+                
+                const output = document.getElementById('commandOutput');
+                output.innerHTML += `<div class="success">[${new Date().toLocaleTimeString()}] 📦 Bulk added ${data.added} tokens</div>`;
+                output.scrollTop = output.scrollHeight;
+            } else {
+                progress.textContent = '❌ Failed to add tokens';
+                progress.style.color = '#ff0040';
+            }
+        })
+        .catch(err => {
+            progress.textContent = '❌ Error: ' + err.message;
+            progress.style.color = '#ff0040';
         });
     }
 
@@ -837,7 +902,8 @@
             
             document.getElementById('statVolume').textContent = (stats.volume || 100) + '%';
             document.getElementById('currentTrack').textContent = stats.currentTrack || 'No track';
-        });
+        })
+        .catch(err => console.log('[ERROR] loadStats:', err));
     }
 
     // ─── SOCKET ───
@@ -890,43 +956,47 @@
         
         switch(cmd) {
             case 'dominate':
-                if (!channel) return alert('Channel ID required');
+                if (!channel) return alert('❌ Channel ID required');
                 endpoint = '/api/domination/start'; body = { channelId: channel }; break;
             case 'stopdom':
                 endpoint = '/api/domination/stop'; body = {}; break;
             case 'sjoin':
-                if (!extra) return alert('Invite required');
+                if (!extra) return alert('❌ Invite required');
                 endpoint = '/api/sjoin'; body = { invite: extra }; break;
             case 'sleave':
-                if (!extra) return alert('Server ID required');
+                if (!extra) return alert('❌ Server ID required');
                 endpoint = '/api/sleave'; body = { serverId: extra }; break;
             case 'sleaveall':
                 endpoint = '/api/sleaveall'; body = {}; break;
             case 'name':
-                if (!extra) return alert('Name required');
+                if (!extra) return alert('❌ Name required');
                 endpoint = '/api/name'; body = { name: extra }; break;
             case 'pass':
-                if (!channel || !target) return alert('Channel ID and target required');
+                if (!channel || !target) return alert('❌ Channel ID and target required');
                 endpoint = '/api/password'; body = { channelId: channel, target: target, password: extra || 'BYPASSED' }; break;
             case 'ssend':
-                if (!channel || !extra) return alert('Channel ID and message required');
+                if (!channel || !extra) return alert('❌ Channel ID and message required');
                 endpoint = '/api/ssend'; body = { channelId: channel, message: extra }; break;
             case 'spam':
-                if (!channel || !extra) return alert('Channel ID and messages required');
+                if (!channel || !extra) return alert('❌ Channel ID and messages required (msg1|msg2)');
                 endpoint = '/api/spam/start'; body = { channelId: channel, messages: extra }; break;
             case 'stopspam':
                 endpoint = '/api/spam/stop'; body = {}; break;
             case 'joinvc':
-                if (!channel) return alert('Channel ID required');
+                if (!channel) return alert('❌ Channel ID required');
                 endpoint = '/api/joinvc'; body = { channelId: channel }; break;
             case 'play':
-                if (!extra) return alert('URL required');
+                if (!extra) return alert('❌ URL required');
                 endpoint = '/api/play'; body = { url: extra }; break;
+            default:
+                return alert('❌ Unknown command');
         }
         
         if (endpoint) {
             const output = document.getElementById('commandOutput');
-            output.innerHTML += `<div style="color:#888;">[${new Date().toLocaleTimeString()}] Executing ${cmd}...</div>`;
+            output.innerHTML += `<div style="color:#888;">[${new Date().toLocaleTimeString()}] ⚡ Executing ${cmd}...</div>`;
+            output.scrollTop = output.scrollHeight;
+            
             fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -935,10 +1005,15 @@
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    output.innerHTML += `<div class="success">[${new Date().toLocaleTimeString()}] ✅ ${cmd} done</div>`;
+                    output.innerHTML += `<div class="success">[${new Date().toLocaleTimeString()}] ✅ ${cmd} completed</div>`;
                 } else {
-                    output.innerHTML += `<div class="error">[${new Date().toLocaleTimeString()}] ❌ ${cmd} failed</div>`;
+                    output.innerHTML += `<div class="error">[${new Date().toLocaleTimeString()}] ❌ ${cmd} failed: ${data.error || 'Unknown error'}</div>`;
                 }
+                output.scrollTop = output.scrollHeight;
+                loadStats();
+            })
+            .catch(err => {
+                output.innerHTML += `<div class="error">[${new Date().toLocaleTimeString()}] ❌ ${cmd} error: ${err.message}</div>`;
                 output.scrollTop = output.scrollHeight;
             });
         }
@@ -955,11 +1030,13 @@
             const output = document.getElementById('commandOutput');
             output.innerHTML += `<div style="color:#888;">[${new Date().toLocaleTimeString()}] 🎵 ${action}</div>`;
             output.scrollTop = output.scrollHeight;
+            loadStats();
         });
     }
 
     function setVolume() {
         const vol = document.getElementById('volumeInput').value;
+        if (!vol || vol < 1 || vol > 20000) return alert('❌ Volume must be 1-20000');
         fetch('/api/volume', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -967,8 +1044,9 @@
         })
         .then(() => {
             const output = document.getElementById('commandOutput');
-            output.innerHTML += `<div style="color:#888;">[${new Date().toLocaleTimeString()}] 🔊 Volume ${vol}%</div>`;
+            output.innerHTML += `<div style="color:#888;">[${new Date().toLocaleTimeString()}] 🔊 Volume set to ${vol}%</div>`;
             output.scrollTop = output.scrollHeight;
+            loadStats();
         });
     }
 
@@ -977,6 +1055,7 @@
         setVolume();
     }
 
+    // ─── KEYBOARD SHORTCUTS ───
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && document.activeElement.id === 'adminPass') login();
     });
@@ -984,6 +1063,7 @@
     console.log('👑 RINTU SUITE LOADED');
     console.log('🔑 KEYAUTH SYSTEM ACTIVE');
     console.log('📦 INFINITE TOKENS SUPPORT');
+    console.log('✅ All functions connected');
 </script>
 </body>
 </html>
