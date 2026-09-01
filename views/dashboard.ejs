@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>👑 RINTU DASHBOARD</title>
+    <title>👑 RINTU SELFBOT SUITE</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -12,12 +12,15 @@
         .header h1 { font-family: 'Orbitron', monospace; font-size: 3.5rem; background: linear-gradient(135deg, #00ffc8, #ff0040, #ff8800); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: shift 3s ease-in-out infinite; background-size: 300% 300%; }
         @keyframes shift { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
         .header .sub { color: #666; letter-spacing: 6px; font-size: 1rem; }
+        .header .evil { color: #ff0040; font-size: 0.8rem; letter-spacing: 3px; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
         .glass { background: rgba(10,10,10,0.8); backdrop-filter: blur(12px); border: 1px solid rgba(0,255,200,0.1); border-radius: 16px; padding: 20px; margin: 12px 0; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin: 15px 0; }
         .stat { background: rgba(0,255,200,0.03); border-radius: 12px; padding: 15px 20px; border: 1px solid rgba(0,255,200,0.06); }
         .stat .label { color: #666; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; }
         .stat .value { font-size: 2rem; font-weight: 700; font-family: 'Orbitron', monospace; background: linear-gradient(135deg, #00ffc8, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .stat .value.gold { background: linear-gradient(135deg, #ff8800, #ffcc00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat .value.danger { background: linear-gradient(135deg, #ff0040, #ff4400); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .login-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.97); display: flex; justify-content: center; align-items: center; z-index: 999; }
         .login-box { background: rgba(10,10,10,0.9); border: 2px solid rgba(0,255,200,0.2); border-radius: 20px; padding: 50px 40px; min-width: 360px; text-align: center; }
         .login-box h2 { font-family: 'Orbitron', monospace; font-size: 2.5rem; background: linear-gradient(135deg, #ff0040, #ff8800); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -45,8 +48,19 @@
         .token-item .status.off { background: rgba(255,0,64,0.15); color: #ff0040; }
         .key-item { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; padding: 6px 8px; border-bottom: 1px solid rgba(255,204,0,0.05); font-size: 0.7rem; }
         .key-item .k { color: #ffcc00; font-family: monospace; }
+        .cmd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 6px; }
+        .cmd-btn { background: rgba(0,255,200,0.05); border: 1px solid rgba(0,255,200,0.1); color: #00ffc8; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 0.7rem; transition: 0.3s; text-transform: uppercase; }
+        .cmd-btn:hover { background: rgba(0,255,200,0.15); }
+        .cmd-btn.danger { border-color: rgba(255,0,64,0.2); color: #ff0040; }
+        .cmd-btn.danger:hover { background: rgba(255,0,64,0.15); }
+        .cmd-btn.gold { border-color: rgba(255,204,0,0.2); color: #ffcc00; }
+        .cmd-btn.primary { border-color: rgba(255,136,0,0.2); color: #ff8800; }
         .flex { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
         .hidden { display: none !important; }
+        #logs { background: rgba(0,0,0,0.4); border-radius: 8px; padding: 10px; max-height: 150px; overflow-y: auto; font-size: 0.7rem; color: #666; font-family: monospace; margin-top: 8px; border: 1px solid rgba(0,255,200,0.05); }
+        #logs .ok { color: #00ffc8; }
+        #logs .err { color: #ff0040; }
+        #logs .gold { color: #ffcc00; }
         ::-webkit-scrollbar { width: 4px; background: transparent; }
         ::-webkit-scrollbar-thumb { background: #00ffc8; border-radius: 4px; }
         @media (max-width: 768px) { .header h1 { font-size: 2rem; } .login-box { min-width: 300px; padding: 30px 20px; } }
@@ -57,7 +71,8 @@
 <div id="loginOverlay" class="login-overlay">
     <div class="login-box">
         <h2>👑 RINTU</h2>
-        <div style="color:#666; letter-spacing:4px; margin:5px 0 20px;">DASHBOARD</div>
+        <div style="color:#ff0040; letter-spacing:4px; margin:5px 0 10px;">🔥 EVIL MODE 🔥</div>
+        <div style="color:#666; letter-spacing:4px; margin-bottom:20px;">SELFBOT SUITE</div>
         <input type="password" id="adminPass" placeholder="Admin Password" onkeydown="if(event.key==='Enter') login()">
         <button onclick="login()">🔓 UNLOCK</button>
     </div>
@@ -66,35 +81,55 @@
 <div id="dashboard" class="container hidden">
     <div class="header">
         <h1>👑 RINTU</h1>
-        <div class="sub">DASHBOARD • v8.0</div>
+        <div class="sub">SELFBOT SUITE • v9.0</div>
+        <div class="evil">🔥 EVIL MODE ACTIVATED 🔥</div>
     </div>
 
-    <div class="glass" style="padding:12px 20px;">
+    <div class="glass" style="padding:12px 20px; border-color:rgba(255,0,64,0.3);">
         <div class="flex" style="justify-content:space-between;">
             <div class="flex">
+                <span>🤖 <span id="onlineCount">0</span> online</span>
                 <span>📦 <span id="tokenCount">0</span> tokens</span>
                 <span>🔑 <span id="keyCount">0</span> keys</span>
-                <span>✅ <span id="enabledCount">0</span> enabled</span>
+                <span>🔊 <span id="vcCount">0</span> VC</span>
             </div>
             <button class="btn danger small" onclick="logout()">🔒 LOGOUT</button>
         </div>
     </div>
 
     <div class="grid">
-        <div class="stat"><div class="label">📦 Total Tokens</div><div class="value" id="statTokens">0</div></div>
-        <div class="stat"><div class="label">✅ Enabled</div><div class="value gold" id="statEnabled">0</div></div>
+        <div class="stat"><div class="label">🤖 Online Bots</div><div class="value" id="statBots">0</div></div>
+        <div class="stat"><div class="label">📦 Total Tokens</div><div class="value gold" id="statTokens">0</div></div>
+        <div class="stat"><div class="label">✅ Enabled</div><div class="value" id="statEnabled">0</div></div>
         <div class="stat"><div class="label">🔑 Keys</div><div class="value gold" id="statKeys">0</div></div>
+        <div class="stat"><div class="label">🔊 VC Connected</div><div class="value danger" id="statVC">0</div></div>
+        <div class="stat"><div class="label">👑 Domination</div><div class="value danger" id="statDom">OFF</div></div>
+        <div class="stat"><div class="label">💬 Spam</div><div class="value gold" id="statSpam">OFF</div></div>
     </div>
 
     <div class="glass">
         <div class="flex" style="justify-content:space-between;">
             <h2 style="color:#ff0040; font-size:1.2rem;">📁 TOKENS</h2>
-            <button class="btn small" onclick="loadTokens()">🔄 REFRESH</button>
+            <div class="flex">
+                <button class="btn primary small" onclick="startAll()">▶ START</button>
+                <button class="btn danger small" onclick="stopAll()">⏹ STOP</button>
+                <button class="btn small" onclick="loadTokens()">🔄 REFRESH</button>
+            </div>
         </div>
         <div class="input-group">
             <input type="text" id="tokenInput" placeholder="Discord User Token" style="flex:3;">
             <input type="text" id="ownerInput" placeholder="Owner" style="flex:1;">
             <button class="btn primary" onclick="addToken()">➕ ADD</button>
+            <button class="btn gold small" onclick="toggleBulk()">📦 BULK</button>
+        </div>
+        <div id="bulkSection" style="display:none; margin-top:10px;">
+            <div class="input-group">
+                <textarea id="bulkInput" placeholder="Enter tokens one per line" style="flex:3; min-height:80px;"></textarea>
+                <div style="display:flex; flex-direction:column; gap:8px; flex:1;">
+                    <input type="text" id="bulkOwner" placeholder="Owner">
+                    <button class="btn primary" onclick="bulkAdd()">📦 ADD ALL</button>
+                </div>
+            </div>
         </div>
         <div class="token-list" id="tokenList"></div>
     </div>
@@ -122,6 +157,60 @@
         <div id="keyList" style="display:none; max-height:150px; overflow-y:auto; margin-top:10px;">
             <div id="keyListItems"></div>
         </div>
+    </div>
+
+    <div class="grid" style="grid-template-columns: 2fr 1fr;">
+        <div class="glass" style="border-color:rgba(255,136,0,0.2);">
+            <div class="flex" style="justify-content:space-between;">
+                <h3 style="color:#ff8800;">⚔️ COMMANDS</h3>
+                <span style="color:#ff0040; font-size:0.7rem;">🔥 EVIL</span>
+            </div>
+            <div class="input-group">
+                <input type="text" id="cmdChannel" placeholder="Channel ID">
+                <input type="text" id="cmdTarget" placeholder="Target">
+                <input type="text" id="cmdExtra" placeholder="Extra" style="flex:1.5;">
+            </div>
+            <div class="cmd-grid">
+                <button class="cmd-btn" onclick="runCmd('dominate')">👑 DOMINATE</button>
+                <button class="cmd-btn danger" onclick="runCmd('stopdom')">⛔ STOP</button>
+                <button class="cmd-btn gold" onclick="runCmd('sjoin')">🔗 SJOIN</button>
+                <button class="cmd-btn danger" onclick="runCmd('sleave')">🚪 SLEAVE</button>
+                <button class="cmd-btn danger" onclick="runCmd('sleaveall')">🚪 ALL</button>
+                <button class="cmd-btn" onclick="runCmd('name')">📛 NAME</button>
+                <button class="cmd-btn" onclick="runCmd('ssend')">📨 SEND</button>
+                <button class="cmd-btn gold" onclick="runCmd('spam')">💬 SPAM</button>
+                <button class="cmd-btn danger" onclick="runCmd('stopspam')">⛔ STOP</button>
+                <button class="cmd-btn" onclick="runCmd('joinvc')">🔊 JOIN VC</button>
+                <button class="cmd-btn primary" onclick="runCmd('play')">▶️ PLAY</button>
+                <button class="cmd-btn" onclick="runCmd('volume')">🔊 VOL</button>
+                <button class="cmd-btn" onclick="runCmd('bassboost')">🎵 BASS</button>
+                <button class="cmd-btn danger" onclick="runCmd('blast')">💥 BLAST</button>
+                <button class="cmd-btn" onclick="runCmd('loop')">🔄 LOOP</button>
+                <button class="cmd-btn" onclick="runCmd('pause')">⏸</button>
+                <button class="cmd-btn" onclick="runCmd('resume')">▶️</button>
+                <button class="cmd-btn" onclick="runCmd('stop')">⏹</button>
+                <button class="cmd-btn" onclick="runCmd('leave')">🚪</button>
+            </div>
+            <div id="cmdOutput" style="margin-top:8px; font-size:0.8rem; color:#888;"></div>
+        </div>
+
+        <div class="glass">
+            <h3 style="color:#ff8800;">🎵 AUDIO</h3>
+            <div style="font-size:0.8rem; color:#666;">🎵 <span id="currentTrack">No track</span></div>
+            <div class="input-group">
+                <input type="number" id="volumeInput" value="100" min="1" max="20000" style="width:80px;">
+                <button class="btn small" onclick="setVol()">SET</button>
+                <button class="btn danger small" onclick="setMax()">MAX</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="glass">
+        <div class="flex" style="justify-content:space-between;">
+            <h3 style="color:#888;">📋 LOGS</h3>
+            <button class="btn small" onclick="document.getElementById('logs').innerHTML = ''">🗑️ CLEAR</button>
+        </div>
+        <div id="logs"></div>
     </div>
 </div>
 
@@ -152,6 +241,7 @@
         });
     }
 
+    // ─── TOKENS ───
     function loadTokens() {
         fetch('/api/tokens').then(r => r.json()).then(data => {
             const list = document.getElementById('tokenList');
@@ -173,7 +263,6 @@
             document.getElementById('tokenCount').textContent = data.length;
             document.getElementById('statTokens').textContent = data.length;
             document.getElementById('statEnabled').textContent = data.filter(t => t.enabled).length;
-            document.getElementById('enabledCount').textContent = data.filter(t => t.enabled).length;
         });
     }
 
@@ -202,6 +291,36 @@
         .then(() => loadTokens());
     }
 
+    function toggleBulk() {
+        const section = document.getElementById('bulkSection');
+        section.style.display = section.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function bulkAdd() {
+        const text = document.getElementById('bulkInput').value;
+        const owner = document.getElementById('bulkOwner').value.trim() || 'bulk';
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 10);
+        if (lines.length === 0) return alert('No valid tokens!');
+        fetch('/api/tokens/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tokens: lines, owner }) })
+        .then(r => r.json()).then(data => {
+            if (data.success) {
+                document.getElementById('bulkInput').value = '';
+                loadTokens();
+                alert(`✅ Added ${data.added}/${data.total} tokens`);
+            }
+        });
+    }
+
+    function startAll() {
+        fetch('/api/tokens/start', { method: 'POST' });
+    }
+
+    function stopAll() {
+        if (!confirm('Stop all bots?')) return;
+        fetch('/api/tokens/stop', { method: 'POST' });
+    }
+
+    // ─── KEYAUTH ───
     function generateKey() {
         const owner = document.getElementById('keyOwner').value.trim() || 'default';
         const days = parseInt(document.getElementById('keyDays').value) || 30;
@@ -236,23 +355,99 @@
         });
     }
 
+    // ─── STATS ───
     function loadStats() {
         fetch('/api/stats').then(r => r.json()).then(s => {
+            document.getElementById('statBots').textContent = s.online || 0;
+            document.getElementById('onlineCount').textContent = s.online || 0;
             document.getElementById('statTokens').textContent = s.tokens || 0;
             document.getElementById('statEnabled').textContent = s.enabled || 0;
             document.getElementById('statKeys').textContent = s.keys || 0;
             document.getElementById('keyCount').textContent = s.keys || 0;
+            document.getElementById('statVC').textContent = s.connected || 0;
+            document.getElementById('vcCount').textContent = s.connected || 0;
+            document.getElementById('statDom').textContent = s.domination ? '🔥 ACTIVE' : 'OFF';
+            document.getElementById('statDom').style.color = s.domination ? '#ff0040' : '#666';
+            document.getElementById('statSpam').textContent = s.spam ? '🔥 ACTIVE' : 'OFF';
+            document.getElementById('statSpam').style.color = s.spam ? '#ff8800' : '#666';
         });
     }
 
+    // ─── SOCKET ───
     socket.on('stats', (data) => {
-        if (data.tokens !== undefined) { document.getElementById('statTokens').textContent = data.tokens; document.getElementById('tokenCount').textContent = data.tokens; }
-        if (data.enabled !== undefined) { document.getElementById('statEnabled').textContent = data.enabled; document.getElementById('enabledCount').textContent = data.enabled; }
+        if (data.online !== undefined) { document.getElementById('statBots').textContent = data.online; document.getElementById('onlineCount').textContent = data.online; }
+        if (data.connected !== undefined) { document.getElementById('statVC').textContent = data.connected; document.getElementById('vcCount').textContent = data.connected; }
         if (data.keys !== undefined) { document.getElementById('statKeys').textContent = data.keys; document.getElementById('keyCount').textContent = data.keys; }
+        if (data.tokens !== undefined) { document.getElementById('statTokens').textContent = data.tokens; document.getElementById('tokenCount').textContent = data.tokens; }
+        if (data.enabled !== undefined) { document.getElementById('statEnabled').textContent = data.enabled; }
     });
 
+    socket.on('log', (data) => {
+        const logs = document.getElementById('logs');
+        logs.innerHTML += `<div>[${data.time}] ${data.message}</div>`;
+        logs.scrollTop = logs.scrollHeight;
+        if (logs.children.length > 50) { logs.removeChild(logs.firstChild); }
+    });
+
+    socket.on('spam', (data) => {
+        document.getElementById('cmdOutput').innerHTML = `💬 Spam: ${data.sent} sent | Total: ${data.total}`;
+    });
+
+    socket.on('domination', (data) => {
+        if (data.active) { document.getElementById('cmdOutput').innerHTML = '👑 Domination active!'; }
+    });
+
+    // ─── COMMANDS ───
+    function runCmd(cmd) {
+        const channel = document.getElementById('cmdChannel').value.trim();
+        const extra = document.getElementById('cmdExtra').value.trim();
+        const target = document.getElementById('cmdTarget').value.trim();
+        
+        let params = {};
+        switch(cmd) {
+            case 'dominate': if (!channel) return alert('Channel ID required'); params = { channelId: channel }; break;
+            case 'stopdom': params = {}; break;
+            case 'sjoin': if (!extra) return alert('Invite required'); params = { invite: extra }; break;
+            case 'sleave': if (!extra) return alert('Server ID required'); params = { serverId: extra }; break;
+            case 'sleaveall': params = {}; break;
+            case 'name': if (!extra) return alert('Name required'); params = { name: extra }; break;
+            case 'ssend': if (!channel || !extra) return alert('Channel ID and message required'); params = { channelId: channel, message: extra }; break;
+            case 'spam': if (!channel || !extra) return alert('Channel ID and messages required (msg1|msg2)'); params = { channelId: channel, messages: extra }; break;
+            case 'stopspam': params = {}; break;
+            case 'joinvc': if (!channel) return alert('Channel ID required'); params = { channelId: channel }; break;
+            case 'play': if (!extra) return alert('URL required'); params = { url: extra }; break;
+            case 'volume': if (!extra) return alert('Volume required'); params = { volume: extra }; break;
+            case 'bassboost': params = {}; break;
+            case 'blast': params = {}; break;
+            case 'loop': params = {}; break;
+            case 'pause': params = {}; break;
+            case 'resume': params = {}; break;
+            case 'stop': params = {}; break;
+            case 'leave': params = {}; break;
+            default: return alert('Unknown command');
+        }
+        
+        document.getElementById('cmdOutput').innerHTML = `⚡ Executing ${cmd}...`;
+        fetch('/api/command', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: cmd, params }) })
+        .then(r => r.json()).then(data => {
+            if (data.success) { document.getElementById('cmdOutput').innerHTML = `✅ ${cmd} executed`; }
+            else { document.getElementById('cmdOutput').innerHTML = `❌ ${cmd} failed`; }
+        });
+    }
+
+    function setVol() {
+        const vol = document.getElementById('volumeInput').value;
+        runCmd('volume');
+    }
+
+    function setMax() {
+        document.getElementById('volumeInput').value = 10000;
+        setVol();
+    }
+
     document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && document.activeElement.id === 'adminPass') login(); });
-    console.log('👑 RINTU DASHBOARD v8.0 LOADED');
+    console.log('👑 RINTU SELFBOT SUITE v9.0 LOADED');
+    console.log('🔥 EVIL MODE ACTIVATED');
 </script>
 </body>
 </html>
