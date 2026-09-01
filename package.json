@@ -1,8 +1,11 @@
 {
-  "name": "rintu-suite",
-  "version": "7.0.0",
-  "description": "RINTU SUITE - With VC Join",
+  "name": "rintu-suite-v8",
+  "version": "8.0.0",
+  "description": "RINTU SUITE - FULL FEATURES",
   "main": "app.js",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "start": "node app.js"
   },
