@@ -1,6 +1,6 @@
-console.log('👑 RINTU SELFBOT SUITE v9.0 - EVIL MODE ACTIVATED');
-console.log('🔥 UNDETECTABLE STEALTH: MAXIMUM');
-console.log('💀 SELFBOT ENGINE: ONLINE');
+console.log('🚂 RINTU SELFBOT - RAILWAY DEPLOYMENT');
+console.log('👑 EVIL MODE ACTIVATED');
+console.log('🔥 NODE VERSION:', process.version);
 
 require('dotenv').config();
 const express = require('express');
@@ -28,19 +28,7 @@ const { spawn } = require("child_process");
 const youtubedl = require("youtube-dl-exec");
 const axios = require("axios");
 
-// ─── USER AGENTS ───
-const userAgents = [
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15',
-    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0'
-];
-
-function getRandomUserAgent() { return userAgents[Math.floor(Math.random() * userAgents.length)]; }
-function randomDelay(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+console.log('[✅] All modules loaded');
 
 // ─── STORAGE ───
 const TOKEN_FILE = path.join(__dirname, 'tokens.json');
@@ -48,24 +36,7 @@ const KEYS_FILE = path.join(__dirname, 'keys.json');
 
 let tokens = [];
 let keys = [];
-let commandLogs = [];
-let clients = [];
-let connections = new Map();
-let players = new Map();
-let activeResources = new Map();
-let currentFFmpegProcess = null;
-let currentUrl = null;
-let currentTitle = "Unknown";
-let volume = 1.0;
-let loopMode = false;
-let bassBoost = false;
-let blastMode = false;
-let dominationMode = false;
-let dominationInterval = null;
-let spamActive = false;
-let spamInterval = null;
-let isBotStarting = false;
-let commandQueue = [];
+let logs = [];
 
 function loadTokens() {
     try {
@@ -156,47 +127,55 @@ function validateKey(key) {
 loadTokens();
 loadKeys();
 
-// ─── SELFBOT ENGINE ───
+// ─── SELFBOT GLOBALS ───
+const clients = [];
+const connections = new Map();
+const players = new Map();
+const activeResources = new Map();
+let currentFFmpegProcess = null;
+let currentUrl = null;
+let currentTitle = "Unknown";
+let volume = 1.0;
+let loopMode = false;
+let bassBoost = false;
+let blastMode = false;
+let dominationMode = false;
+let dominationInterval = null;
+let spamActive = false;
+let spamInterval = null;
+let isBotStarting = false;
+
+// ─── SELFBOT FUNCTIONS ───
 async function stealthLogin(token, index) {
     try {
-        console.log(`[🤖 SELFBOT] Logging in token ${index + 1}...`);
+        console.log(`[🤖] Logging in bot ${index + 1}...`);
         
-        const profile = {
-            index,
-            userAgent: getRandomUserAgent(),
-            device: ['Windows', 'Macintosh', 'X11'][Math.floor(Math.random() * 3)],
-            browser: ['Chrome', 'Firefox', 'Safari'][Math.floor(Math.random() * 3)]
-        };
-
         const client = new Client({
             checkUpdate: false,
             ws: {
                 properties: {
-                    $browser: profile.browser === 'Chrome' ? 'Discord Chrome' :
-                              profile.browser === 'Firefox' ? 'Discord Firefox' : 'Discord Safari',
-                    $device: profile.device,
-                    $os: profile.device === 'Windows' ? 'Windows' :
-                         profile.device === 'Macintosh' ? 'Mac OS X' : 'Linux'
+                    $browser: 'Discord Chrome',
+                    $device: 'Windows',
+                    $os: 'Windows'
                 }
             }
         });
 
         client.on('ready', () => {
-            console.log(`[✅ SELFBOT] ${client.user?.tag || 'Unknown'} online`);
+            console.log(`[✅] ${client.user?.tag || 'Unknown'} online`);
             io.emit('stats', { online: clients.filter(c => c?.user).length });
             addLog(`✅ ${client.user?.tag || 'Unknown'} online`);
         });
 
         client.on('error', (e) => {
-            console.log(`[❌ SELFBOT] Error: ${e.message}`);
+            console.log(`[❌] Error: ${e.message}`);
         });
 
         await client.login(token);
         clients.push(client);
-        console.log(`[✅ SELFBOT] Token ${index + 1} logged in`);
         return client;
     } catch (err) {
-        console.log(`[❌ SELFBOT] Login failed: ${err.message}`);
+        console.log(`[❌] Login failed: ${err.message}`);
         return null;
     }
 }
@@ -227,7 +206,7 @@ async function startBots() {
         const t = enabled[i];
         const client = await stealthLogin(t.token, i);
         if (client) success++;
-        await sleep(randomDelay(1000, 3000));
+        await sleep(2000);
     }
 
     isBotStarting = false;
@@ -248,6 +227,8 @@ async function stopBots() {
     addLog('🛑 All bots stopped');
     io.emit('stats', { online: 0 });
 }
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // ─── VC FUNCTIONS ───
 async function joinVoiceChannel(channelId) {
@@ -281,7 +262,7 @@ async function joinVoiceChannel(channelId) {
         } catch (e) {
             console.log('[VC] Error:', e.message);
         }
-        await sleep(randomDelay(500, 1500));
+        await sleep(1000);
     }
     addLog(`✅ ${connected}/${online.length} joined VC`);
     io.emit('stats', { connected: connections.size });
@@ -311,7 +292,7 @@ async function joinServer(inviteInput) {
                 joined++;
             } catch(e2) {}
         }
-        await sleep(randomDelay(1000, 3000));
+        await sleep(2000);
     }
     addLog(`✅ ${joined}/${online.length} joined server`);
 }
@@ -324,7 +305,7 @@ async function leaveServer(serverId) {
             const guild = await client.guilds.fetch(serverId);
             if (guild) { await guild.leave(); left++; }
         } catch(e) { left++; }
-        await sleep(randomDelay(500, 1500));
+        await sleep(1000);
     }
     addLog(`✅ ${left}/${clients.length} left server`);
 }
@@ -338,7 +319,7 @@ async function leaveAllServers() {
                 await client.guilds.fetch(gid).then(g => g?.leave());
                 total++;
             } catch(e) { total++; }
-            await sleep(randomDelay(200, 800));
+            await sleep(500);
         }
     }
     addLog(`✅ Left ${total} servers`);
@@ -352,7 +333,7 @@ async function changeNames(name) {
             await client.user.setUsername(name);
             changed++;
         } catch(e) {}
-        await sleep(randomDelay(1000, 3000));
+        await sleep(2000);
     }
     addLog(`✅ ${changed}/${clients.length} changed to ${name}`);
 }
@@ -365,7 +346,7 @@ async function sendMessage(channelId, message) {
             const channel = await client.channels.fetch(channelId);
             if (channel) { await channel.send(message); sent++; }
         } catch(e) { sent++; }
-        await sleep(randomDelay(200, 800));
+        await sleep(500);
     }
     addLog(`✅ ${sent}/${clients.length} sent`);
 }
@@ -387,7 +368,7 @@ async function startSpam(channelId, messages, delay) {
                 const channel = await client.channels.fetch(channelId);
                 if (channel) { await channel.send(msg); sent++; }
             } catch(e) { sent++; }
-            await sleep(randomDelay(100, 400));
+            await sleep(300);
         }
         io.emit('spam', { total: idx, sent });
     }, parseInt(delay) || 3000);
@@ -421,7 +402,7 @@ async function startDomination(channelId) {
                 connections.set(Date.now(), conn);
             }
         } catch(e) {}
-        await sleep(randomDelay(500, 1500));
+        await sleep(1000);
     }
 
     dominationInterval = setInterval(() => {
@@ -439,7 +420,6 @@ function stopDomination() {
     addLog('⛔ Domination stopped');
 }
 
-// ─── PLAY AUDIO ───
 async function playAudio(url) {
     if (connections.size === 0) {
         addLog('❌ Join VC first!');
@@ -507,7 +487,6 @@ function stopFFmpeg() {
     }
 }
 
-// ─── CONTROL FUNCTIONS ───
 function controlAudio(action) {
     if (action === 'pause') players.forEach(p => p.pause());
     if (action === 'resume') players.forEach(p => p.unpause());
@@ -527,8 +506,8 @@ function setVolume(val) {
 
 function addLog(msg) {
     const time = new Date().toLocaleTimeString();
-    commandLogs.unshift({ time, message: msg });
-    if (commandLogs.length > 100) commandLogs.pop();
+    logs.unshift({ time, message: msg });
+    if (logs.length > 100) logs.pop();
     io.emit('log', { time, message: msg });
     console.log(`[LOG] ${msg}`);
 }
@@ -564,11 +543,15 @@ app.get('/', (req, res) => {
             onlineCount: clients.filter(c => c?.user).length,
             connectedCount: connections.size,
             admin: admin,
-            logs: commandLogs.slice(0, 20)
+            logs: logs.slice(0, 20)
         });
     } catch (err) {
-        res.send(`<h1 style="color:#ff0040;">Error: ${err.message}</h1>`);
+        res.send(`<h1 style="color:#ff0040;">👑 RINTU</h1><p>✅ Running! Error: ${err.message}</p>`);
     }
+});
+
+app.get('/ping', (req, res) => {
+    res.json({ status: 'alive', time: new Date().toISOString() });
 });
 
 app.get('/test', (req, res) => {
@@ -577,7 +560,8 @@ app.get('/test', (req, res) => {
         tokens: tokens.length,
         keys: keys.length,
         online: clients.filter(c => c?.user).length,
-        connected: connections.size
+        connected: connections.size,
+        nodeVersion: process.version
     });
 });
 
@@ -674,6 +658,13 @@ app.post('/api/keys/validate', (req, res) => {
     res.json(result);
 });
 
+app.post('/api/keys/delete', (req, res) => {
+    if (!admin) return res.status(401).json({ error: 'Unauthorized' });
+    keys = keys.filter(k => k.key !== req.body.key);
+    saveKeys();
+    res.json({ success: true });
+});
+
 // ─── COMMAND API ───
 app.post('/api/command', async (req, res) => {
     if (!admin) return res.status(401).json({ error: 'Unauthorized' });
@@ -733,7 +724,7 @@ io.on('connection', (socket) => {
         online: clients.filter(c => c?.user).length,
         connected: connections.size
     });
-    socket.emit('logs', commandLogs.slice(0, 20));
+    socket.emit('logs', logs.slice(0, 20));
 });
 
 // ─── START SERVER ───
@@ -741,17 +732,18 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`
 ╔══════════════════════════════════════════════════════════════╗
-║           👑 RINTU SELFBOT SUITE v9.0 👑                  ║
-║           🔥 EVIL MODE: ACTIVATED                         ║
-║           💀 UNDETECTABLE: MAXIMUM                        ║
+║        🚂 RINTU SELFBOT - RAILWAY 🚂                       ║
+║           👑 EVIL MODE ACTIVATED                           ║
+║           🔥 FULLY WORKING                                 ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  📦 Tokens: ${tokens.length}                                ║
 ║  ✅ Enabled: ${getEnabledTokens().length}                  ║
 ║  🔑 Keys: ${keys.length}                                   ║
-║  🌐 Dashboard: http://localhost:${PORT}                     ║
+║  🤖 Online: ${clients.filter(c => c?.user).length}         ║
+║  🔊 VC Connected: ${connections.size}                      ║
+║  🌐 Dashboard: https://your-app.railway.app                ║
 ║  🔑 Admin: ${process.env.ADMIN_PASS || 'RINTU_2026'}       ║
-║  📌 RUN ON YOUR PC OR VPS                                  ║
-║  ⚠️ DO NOT DEPLOY ON RENDER                               ║
+║  📌 RAILWAY IS BETTER THAN RENDER                          ║
 ╚══════════════════════════════════════════════════════════════╝
     `);
 
@@ -765,7 +757,12 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log('  📨 SSEND: Send messages from all bots');
     console.log('  💬 SPAM: Spam messages from all bots');
     console.log('  👑 DOMINATION: Dominate voice channels');
-    console.log('\n🔥 SELFBOT ENGINE: ONLINE');
+    console.log('\n🔥 RAILWAY DEPLOYMENT: WORKING');
+
+    if (getEnabledTokens().length > 0) {
+        console.log('[🚀 AUTO-START] Launching bots...');
+        startBots();
+    }
 });
 
 process.on('SIGINT', async () => {
