@@ -6,140 +6,27 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            background: #0a0a0a; 
-            color: #00ffc8; 
-            font-family: 'Rajdhani', sans-serif;
-            min-height: 100vh;
-        }
+        body { background: #0a0a0a; color: #00ffc8; font-family: 'Rajdhani', sans-serif; min-height: 100vh; }
         .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
-        
-        .header {
-            text-align: center;
-            padding: 30px 0;
-        }
-        .header h1 {
-            font-family: 'Orbitron', monospace;
-            font-size: 3.5rem;
-            background: linear-gradient(135deg, #00ffc8, #ff0040, #ff8800);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: shift 3s ease-in-out infinite;
-            background-size: 300% 300%;
-        }
-        @keyframes shift {
-            0%,100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
+        .header { text-align: center; padding: 30px 0; }
+        .header h1 { font-family: 'Orbitron', monospace; font-size: 3.5rem; background: linear-gradient(135deg, #00ffc8, #ff0040, #ff8800); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: shift 3s ease-in-out infinite; background-size: 300% 300%; }
+        @keyframes shift { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
         .header .sub { color: #666; letter-spacing: 6px; font-size: 1rem; }
-        
-        .glass {
-            background: rgba(10,10,10,0.8);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(0,255,200,0.1);
-            border-radius: 16px;
-            padding: 20px;
-            margin: 12px 0;
-        }
-        
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
-            margin: 15px 0;
-        }
-        
-        .stat {
-            background: rgba(0,255,200,0.03);
-            border-radius: 12px;
-            padding: 15px 20px;
-            border: 1px solid rgba(0,255,200,0.06);
-        }
+        .glass { background: rgba(10,10,10,0.8); backdrop-filter: blur(12px); border: 1px solid rgba(0,255,200,0.1); border-radius: 16px; padding: 20px; margin: 12px 0; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin: 15px 0; }
+        .stat { background: rgba(0,255,200,0.03); border-radius: 12px; padding: 15px 20px; border: 1px solid rgba(0,255,200,0.06); }
         .stat .label { color: #666; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; }
-        .stat .value { 
-            font-size: 2rem; 
-            font-weight: 700; 
-            font-family: 'Orbitron', monospace;
-            background: linear-gradient(135deg, #00ffc8, #00ff88);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .stat .value.danger {
-            background: linear-gradient(135deg, #ff0040, #ff4400);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .stat .value.gold {
-            background: linear-gradient(135deg, #ff8800, #ffcc00);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .login-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.97);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 999;
-        }
-        .login-box {
-            background: rgba(10,10,10,0.9);
-            border: 2px solid rgba(0,255,200,0.2);
-            border-radius: 20px;
-            padding: 50px 40px;
-            min-width: 360px;
-            text-align: center;
-        }
-        .login-box h2 {
-            font-family: 'Orbitron', monospace;
-            font-size: 2.5rem;
-            background: linear-gradient(135deg, #ff0040, #ff8800);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .login-box input {
-            background: rgba(0,0,0,0.6);
-            color: #00ffc8;
-            border: 1px solid rgba(0,255,200,0.15);
-            padding: 14px;
-            width: 100%;
-            border-radius: 10px;
-            font-size: 1rem;
-            margin: 10px 0;
-            font-family: 'Rajdhani', sans-serif;
-            outline: none;
-        }
+        .stat .value { font-size: 2rem; font-weight: 700; font-family: 'Orbitron', monospace; background: linear-gradient(135deg, #00ffc8, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat .value.danger { background: linear-gradient(135deg, #ff0040, #ff4400); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat .value.gold { background: linear-gradient(135deg, #ff8800, #ffcc00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .login-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.97); display: flex; justify-content: center; align-items: center; z-index: 999; }
+        .login-box { background: rgba(10,10,10,0.9); border: 2px solid rgba(0,255,200,0.2); border-radius: 20px; padding: 50px 40px; min-width: 360px; text-align: center; }
+        .login-box h2 { font-family: 'Orbitron', monospace; font-size: 2.5rem; background: linear-gradient(135deg, #ff0040, #ff8800); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .login-box input { background: rgba(0,0,0,0.6); color: #00ffc8; border: 1px solid rgba(0,255,200,0.15); padding: 14px; width: 100%; border-radius: 10px; font-size: 1rem; margin: 10px 0; font-family: 'Rajdhani', sans-serif; outline: none; }
         .login-box input:focus { border-color: rgba(0,255,200,0.5); }
-        .login-box button {
-            background: linear-gradient(135deg, #ff0040, #ff4400);
-            color: #fff;
-            border: none;
-            padding: 14px;
-            border-radius: 10px;
-            font-weight: 700;
-            font-size: 1.1rem;
-            cursor: pointer;
-            width: 100%;
-            font-family: 'Rajdhani', sans-serif;
-            transition: 0.3s;
-        }
+        .login-box button { background: linear-gradient(135deg, #ff0040, #ff4400); color: #fff; border: none; padding: 14px; border-radius: 10px; font-weight: 700; font-size: 1.1rem; cursor: pointer; width: 100%; font-family: 'Rajdhani', sans-serif; transition: 0.3s; }
         .login-box button:hover { transform: scale(1.02); }
-        
-        .btn {
-            background: rgba(0,255,200,0.08);
-            color: #00ffc8;
-            border: 1px solid rgba(0,255,200,0.15);
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-family: 'Rajdhani', sans-serif;
-            font-weight: 600;
-            font-size: 0.8rem;
-            transition: 0.3s;
-            text-transform: uppercase;
-        }
+        .btn { background: rgba(0,255,200,0.08); color: #00ffc8; border: 1px solid rgba(0,255,200,0.15); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 0.8rem; transition: 0.3s; text-transform: uppercase; }
         .btn:hover { background: rgba(0,255,200,0.15); }
         .btn.danger { border-color: rgba(255,0,64,0.3); color: #ff0040; }
         .btn.danger:hover { background: rgba(255,0,64,0.15); }
@@ -148,112 +35,36 @@
         .btn.gold { border-color: rgba(255,204,0,0.3); color: #ffcc00; }
         .btn.gold:hover { background: rgba(255,204,0,0.15); }
         .btn.small { padding: 4px 10px; font-size: 0.7rem; }
-        
-        .input-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin: 8px 0;
-        }
-        .input-group input, .input-group textarea {
-            background: rgba(0,0,0,0.5);
-            color: #00ffc8;
-            border: 1px solid rgba(0,255,200,0.1);
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 0.9rem;
-            outline: none;
-            flex: 1;
-            min-width: 140px;
-        }
+        .input-group { display: flex; gap: 10px; flex-wrap: wrap; margin: 8px 0; }
+        .input-group input, .input-group textarea { background: rgba(0,0,0,0.5); color: #00ffc8; border: 1px solid rgba(0,255,200,0.1); padding: 10px 14px; border-radius: 8px; font-family: 'Rajdhani', sans-serif; font-size: 0.9rem; outline: none; flex: 1; min-width: 140px; }
         .input-group input:focus, .input-group textarea:focus { border-color: rgba(0,255,200,0.3); }
-        
         .token-list { max-height: 300px; overflow-y: auto; margin-top: 10px; }
-        .token-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 12px;
-            border-bottom: 1px solid rgba(0,255,200,0.05);
-            font-size: 0.8rem;
-        }
+        .token-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid rgba(0,255,200,0.05); font-size: 0.8rem; }
         .token-item .t { color: #666; font-family: monospace; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
-        .token-item .status {
-            padding: 2px 12px;
-            border-radius: 12px;
-            font-size: 0.6rem;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
+        .token-item .status { padding: 2px 12px; border-radius: 12px; font-size: 0.6rem; font-weight: 700; text-transform: uppercase; }
         .token-item .status.on { background: rgba(0,255,200,0.15); color: #00ffc8; }
         .token-item .status.off { background: rgba(255,0,64,0.15); color: #ff0040; }
-        
-        .key-item {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr;
-            gap: 8px;
-            padding: 6px 8px;
-            border-bottom: 1px solid rgba(255,204,0,0.05);
-            font-size: 0.7rem;
-        }
+        .key-item { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; padding: 6px 8px; border-bottom: 1px solid rgba(255,204,0,0.05); font-size: 0.7rem; }
         .key-item .k { color: #ffcc00; font-family: monospace; }
-        
-        .cmd-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            gap: 6px;
-        }
-        .cmd-btn {
-            background: rgba(0,255,200,0.05);
-            border: 1px solid rgba(0,255,200,0.1);
-            color: #00ffc8;
-            padding: 6px 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-family: 'Rajdhani', sans-serif;
-            font-weight: 600;
-            font-size: 0.7rem;
-            transition: 0.3s;
-            text-transform: uppercase;
-        }
+        .cmd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 6px; }
+        .cmd-btn { background: rgba(0,255,200,0.05); border: 1px solid rgba(0,255,200,0.1); color: #00ffc8; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 0.7rem; transition: 0.3s; text-transform: uppercase; }
         .cmd-btn:hover { background: rgba(0,255,200,0.15); }
         .cmd-btn.danger { border-color: rgba(255,0,64,0.2); color: #ff0040; }
         .cmd-btn.danger:hover { background: rgba(255,0,64,0.15); }
         .cmd-btn.gold { border-color: rgba(255,204,0,0.2); color: #ffcc00; }
-        
-        #output {
-            background: rgba(0,0,0,0.4);
-            border-radius: 8px;
-            padding: 10px;
-            max-height: 100px;
-            overflow-y: auto;
-            font-size: 0.7rem;
-            color: #666;
-            font-family: monospace;
-            margin-top: 8px;
-            border: 1px solid rgba(0,255,200,0.05);
-        }
+        #output { background: rgba(0,0,0,0.4); border-radius: 8px; padding: 10px; max-height: 100px; overflow-y: auto; font-size: 0.7rem; color: #666; font-family: monospace; margin-top: 8px; border: 1px solid rgba(0,255,200,0.05); }
         #output .ok { color: #00ffc8; }
         #output .err { color: #ff0040; }
         #output .gold { color: #ffcc00; }
-        
         .flex { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
         .hidden { display: none !important; }
-        
         ::-webkit-scrollbar { width: 4px; background: transparent; }
         ::-webkit-scrollbar-thumb { background: #00ffc8; border-radius: 4px; }
-        
-        @media (max-width: 768px) {
-            .header h1 { font-size: 2rem; }
-            .login-box { min-width: 300px; padding: 30px 20px; }
-            .grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
-        }
+        @media (max-width: 768px) { .header h1 { font-size: 2rem; } .login-box { min-width: 300px; padding: 30px 20px; } .grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); } }
     </style>
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="loginOverlay" class="login-overlay">
     <div class="login-box">
         <h2>👑 RINTU</h2>
@@ -263,15 +74,12 @@
     </div>
 </div>
 
-<!-- DASHBOARD -->
 <div id="dashboard" class="container hidden">
-
     <div class="header">
         <h1>👑 RINTU</h1>
         <div class="sub">DOMINATION SUITE • v8.0</div>
     </div>
 
-    <!-- TOP BAR -->
     <div class="glass" style="padding:12px 20px;">
         <div class="flex" style="justify-content:space-between;">
             <div class="flex">
@@ -284,7 +92,6 @@
         </div>
     </div>
 
-    <!-- STATS -->
     <div class="grid">
         <div class="stat"><div class="label">🤖 Online Bots</div><div class="value" id="statBots">0</div></div>
         <div class="stat"><div class="label">📦 Total Tokens</div><div class="value gold" id="statTokens">0</div></div>
@@ -295,7 +102,6 @@
         <div class="stat"><div class="label">💬 Spam</div><div class="value gold" id="statSpam">OFF</div></div>
     </div>
 
-    <!-- TOKENS -->
     <div class="glass">
         <div class="flex" style="justify-content:space-between;">
             <h2 style="color:#ff0040; font-size:1.2rem;">📁 TOKENS</h2>
@@ -313,7 +119,6 @@
         <div class="token-list" id="tokenList"></div>
     </div>
 
-    <!-- KEYAUTH -->
     <div class="glass" style="border-color:rgba(255,204,0,0.2);">
         <div class="flex" style="justify-content:space-between;">
             <h2 style="color:#ffcc00; font-size:1.2rem;">🔑 KEYAUTH</h2>
@@ -339,7 +144,6 @@
         </div>
     </div>
 
-    <!-- COMMANDS + AUDIO -->
     <div class="grid" style="grid-template-columns: 2fr 1fr;">
         <div class="glass" style="border-color:rgba(255,136,0,0.2);">
             <div class="flex" style="justify-content:space-between;">
@@ -395,14 +199,9 @@
     let socket = io();
     let selfbotLoaded = false;
 
-    // ─── LOGIN ───
     function login() {
         const pass = document.getElementById('adminPass').value;
-        fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password: pass })
-        })
+        fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pass }) })
         .then(r => r.json())
         .then(data => {
             if (data.success) {
@@ -411,10 +210,7 @@
                 loadTokens();
                 loadStats();
                 setInterval(loadStats, 3000);
-                document.getElementById('selfbotStatus').textContent = '🔗 Connected';
-            } else {
-                alert('❌ Wrong password!');
-            }
+            } else { alert('❌ Wrong password!'); }
         });
     }
 
@@ -426,11 +222,8 @@
         });
     }
 
-    // ─── TOKENS ───
     function loadTokens() {
-        fetch('/api/tokens')
-        .then(r => r.json())
-        .then(data => {
+        fetch('/api/tokens').then(r => r.json()).then(data => {
             const list = document.getElementById('tokenList');
             if (!data || data.length === 0) {
                 list.innerHTML = '<div style="color:#444; text-align:center; padding:20px;">No tokens added.</div>';
@@ -458,66 +251,41 @@
         const owner = document.getElementById('ownerInput').value.trim() || 'default';
         if (!token) return alert('❌ Enter a token!');
         if (token.length < 10) return alert('❌ Token too short!');
-        
-        fetch('/api/tokens/add', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token, owner })
-        })
-        .then(r => r.json())
-        .then(data => {
+        fetch('/api/tokens/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, owner }) })
+        .then(r => r.json()).then(data => {
             if (data.success) {
                 document.getElementById('tokenInput').value = '';
                 loadTokens();
                 addOutput('✅ Token added!', 'ok');
-            } else {
-                alert('❌ Failed to add token');
-            }
+            } else { alert('❌ Failed to add token'); }
         });
     }
 
     function deleteToken(id) {
         if (!confirm('Delete this token?')) return;
-        fetch('/api/tokens/delete', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id })
-        })
+        fetch('/api/tokens/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
         .then(() => loadTokens());
     }
 
     function toggleToken(id) {
-        fetch('/api/tokens/toggle', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id })
-        })
+        fetch('/api/tokens/toggle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
         .then(() => loadTokens());
     }
 
     function startAll() {
-        fetch('/api/tokens/start', { method: 'POST' })
-        .then(() => addOutput('🚀 Starting tokens...', 'ok'));
+        fetch('/api/tokens/start', { method: 'POST' }).then(() => addOutput('🚀 Starting tokens...', 'ok'));
     }
 
     function stopAll() {
         if (!confirm('Stop all bots?')) return;
-        fetch('/api/tokens/stop', { method: 'POST' })
-        .then(() => addOutput('🛑 All bots stopped', 'err'));
+        fetch('/api/tokens/stop', { method: 'POST' }).then(() => addOutput('🛑 All bots stopped', 'err'));
     }
 
-    // ─── KEYAUTH ───
     function generateKey() {
         const owner = document.getElementById('keyOwner').value.trim() || 'default';
         const days = parseInt(document.getElementById('keyDays').value) || 30;
-        
-        fetch('/api/keys/create', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ owner, days })
-        })
-        .then(r => r.json())
-        .then(data => {
+        fetch('/api/keys/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ owner, days }) })
+        .then(r => r.json()).then(data => {
             if (data.success) {
                 document.getElementById('generatedKey').textContent = data.key;
                 document.getElementById('keyOwnerDisplay').textContent = data.owner;
@@ -531,39 +299,25 @@
 
     function copyKey() {
         const key = document.getElementById('generatedKey').textContent;
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(key);
-            addOutput('📋 Key copied!', 'ok');
-        }
+        if (navigator.clipboard) { navigator.clipboard.writeText(key); addOutput('📋 Key copied!', 'ok'); }
     }
 
     function listKeys() {
-        fetch('/api/keys/list')
-        .then(r => r.json())
-        .then(data => {
+        fetch('/api/keys/list').then(r => r.json()).then(data => {
             const list = document.getElementById('keyListItems');
             const container = document.getElementById('keyList');
             if (!data.keys || data.keys.length === 0) {
                 list.innerHTML = '<div style="color:#444; text-align:center; padding:20px;">No keys generated.</div>';
             } else {
-                list.innerHTML = data.keys.map(k => `
-                    <div class="key-item">
-                        <span class="k">${k.key}</span>
-                        <span>${k.owner}</span>
-                        <span style="color:#888; font-size:0.6rem;">${k.expires}</span>
-                    </div>
-                `).join('');
+                list.innerHTML = data.keys.map(k => `<div class="key-item"><span class="k">${k.key}</span><span>${k.owner}</span><span style="color:#888; font-size:0.6rem;">${k.expires}</span></div>`).join('');
             }
             container.style.display = 'block';
             document.getElementById('keyDisplay').style.display = 'none';
         });
     }
 
-    // ─── STATS ───
     function loadStats() {
-        fetch('/api/stats')
-        .then(r => r.json())
-        .then(s => {
+        fetch('/api/stats').then(r => r.json()).then(s => {
             document.getElementById('statBots').textContent = s.online || 0;
             document.getElementById('onlineCount').textContent = s.online || 0;
             document.getElementById('statTokens').textContent = s.tokens || 0;
@@ -572,165 +326,79 @@
             document.getElementById('keyCount').textContent = s.keys || 0;
             document.getElementById('statVC').textContent = s.connected || 0;
             document.getElementById('vcCount').textContent = s.connected || 0;
-            
             document.getElementById('statDom').textContent = s.domination ? '🔥 ACTIVE' : 'OFF';
             document.getElementById('statDom').style.color = s.domination ? '#ff0040' : '#666';
-            
             document.getElementById('statSpam').textContent = s.spam ? '🔥 ACTIVE' : 'OFF';
             document.getElementById('statSpam').style.color = s.spam ? '#ff8800' : '#666';
-            
             selfbotLoaded = s.selfbotLoaded || false;
             document.getElementById('selfbotStatus').textContent = selfbotLoaded ? '✅ Connected' : '❌ Not Loaded';
             document.getElementById('selfbotStatus').style.color = selfbotLoaded ? '#00ffc8' : '#ff0040';
         });
     }
 
-    // ─── SOCKET ───
     socket.on('stats', (data) => {
-        if (data.online !== undefined) {
-            document.getElementById('statBots').textContent = data.online;
-            document.getElementById('onlineCount').textContent = data.online;
-        }
-        if (data.connected !== undefined) {
-            document.getElementById('statVC').textContent = data.connected;
-            document.getElementById('vcCount').textContent = data.connected;
-        }
-        if (data.keys !== undefined) {
-            document.getElementById('statKeys').textContent = data.keys;
-            document.getElementById('keyCount').textContent = data.keys;
-        }
-        if (data.tokens !== undefined) {
-            document.getElementById('statTokens').textContent = data.tokens;
-            document.getElementById('tokenCount').textContent = data.tokens;
-        }
-        if (data.enabled !== undefined) {
-            document.getElementById('statEnabled').textContent = data.enabled;
-        }
+        if (data.online !== undefined) { document.getElementById('statBots').textContent = data.online; document.getElementById('onlineCount').textContent = data.online; }
+        if (data.connected !== undefined) { document.getElementById('statVC').textContent = data.connected; document.getElementById('vcCount').textContent = data.connected; }
+        if (data.keys !== undefined) { document.getElementById('statKeys').textContent = data.keys; document.getElementById('keyCount').textContent = data.keys; }
+        if (data.tokens !== undefined) { document.getElementById('statTokens').textContent = data.tokens; document.getElementById('tokenCount').textContent = data.tokens; }
+        if (data.enabled !== undefined) { document.getElementById('statEnabled').textContent = data.enabled; }
         selfbotLoaded = data.selfbotLoaded || false;
     });
 
-    socket.on('command_result', (data) => {
-        addOutput(`${data.command}: ${data.result}`, 'ok');
-    });
+    socket.on('command_result', (data) => { addOutput(`${data.command}: ${data.result}`, 'ok'); });
+    socket.on('spam', (data) => { addOutput(`💬 Spam: ${data.sent} sent | Total: ${data.total}`, 'gold'); });
+    socket.on('domination', (data) => { if (data.active) { addOutput('👑 Domination active!', 'gold'); } });
 
-    socket.on('spam', (data) => {
-        addOutput(`💬 Spam: ${data.sent} sent | Total: ${data.total}`, 'gold');
-    });
-
-    socket.on('domination', (data) => {
-        if (data.active) {
-            addOutput('👑 Domination active!', 'gold');
-        }
-    });
-
-    // ─── COMMANDS ───
     function runCmd(cmd) {
         const channel = document.getElementById('cmdChannel').value.trim();
         const extra = document.getElementById('cmdExtra').value.trim();
-        const target = document.getElementById('cmdTarget').value.trim();
-        
-        if (!selfbotLoaded) {
-            addOutput('❌ Selfbot not loaded! VC features disabled.', 'err');
-            return;
-        }
-        
+        if (!selfbotLoaded) { addOutput('❌ Selfbot not loaded!', 'err'); return; }
         let endpoint = '', body = {};
-        
         switch(cmd) {
-            case 'dominate':
-                if (!channel) return alert('Channel ID required');
-                endpoint = '/api/domination/start'; body = { channelId: channel }; break;
-            case 'stopdom':
-                endpoint = '/api/domination/stop'; body = {}; break;
-            case 'sjoin':
-                if (!extra) return alert('Invite required');
-                endpoint = '/api/sjoin'; body = { invite: extra }; break;
-            case 'sleave':
-                if (!extra) return alert('Server ID required');
-                endpoint = '/api/sleave'; body = { serverId: extra }; break;
-            case 'sleaveall':
-                endpoint = '/api/sleaveall'; body = {}; break;
-            case 'name':
-                if (!extra) return alert('Name required');
-                endpoint = '/api/name'; body = { name: extra }; break;
-            case 'ssend':
-                if (!channel || !extra) return alert('Channel ID and message required');
-                endpoint = '/api/ssend'; body = { channelId: channel, message: extra }; break;
-            case 'spam':
-                if (!channel || !extra) return alert('Channel ID and messages required (msg1|msg2)');
-                endpoint = '/api/spam/start'; body = { channelId: channel, messages: extra }; break;
-            case 'stopspam':
-                endpoint = '/api/spam/stop'; body = {}; break;
-            case 'joinvc':
-                if (!channel) return alert('Channel ID required');
-                endpoint = '/api/joinvc'; body = { channelId: channel }; break;
-            case 'play':
-                if (!extra) return alert('URL required');
-                endpoint = '/api/play'; body = { url: extra }; break;
+            case 'dominate': if (!channel) return alert('Channel ID required'); endpoint = '/api/domination/start'; body = { channelId: channel }; break;
+            case 'stopdom': endpoint = '/api/domination/stop'; body = {}; break;
+            case 'sjoin': if (!extra) return alert('Invite required'); endpoint = '/api/sjoin'; body = { invite: extra }; break;
+            case 'sleave': if (!extra) return alert('Server ID required'); endpoint = '/api/sleave'; body = { serverId: extra }; break;
+            case 'sleaveall': endpoint = '/api/sleaveall'; body = {}; break;
+            case 'name': if (!extra) return alert('Name required'); endpoint = '/api/name'; body = { name: extra }; break;
+            case 'ssend': if (!channel || !extra) return alert('Channel ID and message required'); endpoint = '/api/ssend'; body = { channelId: channel, message: extra }; break;
+            case 'spam': if (!channel || !extra) return alert('Channel ID and messages required (msg1|msg2)'); endpoint = '/api/spam/start'; body = { channelId: channel, messages: extra }; break;
+            case 'stopspam': endpoint = '/api/spam/stop'; body = {}; break;
+            case 'joinvc': if (!channel) return alert('Channel ID required'); endpoint = '/api/joinvc'; body = { channelId: channel }; break;
+            case 'play': if (!extra) return alert('URL required'); endpoint = '/api/play'; body = { url: extra }; break;
         }
-        
         if (endpoint) {
             addOutput(`⚡ Executing ${cmd}...`, '');
-            fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    addOutput(`✅ ${cmd} completed`, 'ok');
-                } else {
-                    addOutput(`❌ ${cmd} failed: ${data.error || 'Unknown'}`, 'err');
-                }
+            fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+            .then(r => r.json()).then(data => {
+                if (data.success) { addOutput(`✅ ${cmd} completed`, 'ok'); } else { addOutput(`❌ ${cmd} failed: ${data.error || 'Unknown'}`, 'err'); }
             });
         }
     }
 
-    // ─── AUDIO ───
     function sendCtrl(action) {
-        if (!selfbotLoaded) {
-            addOutput('❌ Selfbot not loaded!', 'err');
-            return;
-        }
-        fetch('/api/control', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action })
-        })
+        if (!selfbotLoaded) { addOutput('❌ Selfbot not loaded!', 'err'); return; }
+        fetch('/api/control', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) })
         .then(() => addOutput(`🎵 ${action}`, ''));
     }
 
     function setVol() {
         const vol = document.getElementById('volumeInput').value;
-        fetch('/api/volume', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ volume: vol })
-        })
+        fetch('/api/volume', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ volume: vol }) })
         .then(() => addOutput(`🔊 Volume ${vol}%`, ''));
     }
 
-    function setMax() {
-        document.getElementById('volumeInput').value = 10000;
-        setVol();
-    }
+    function setMax() { document.getElementById('volumeInput').value = 10000; setVol(); }
 
-    // ─── OUTPUT ───
     function addOutput(text, cls = '') {
         const out = document.getElementById('output');
         const time = new Date().toLocaleTimeString();
         out.innerHTML += `<div class="${cls}">[${time}] ${text}</div>`;
         out.scrollTop = out.scrollHeight;
-        if (out.children.length > 50) {
-            out.removeChild(out.firstChild);
-        }
+        if (out.children.length > 50) { out.removeChild(out.firstChild); }
     }
 
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && document.activeElement.id === 'adminPass') login();
-    });
-
+    document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && document.activeElement.id === 'adminPass') login(); });
     console.log('👑 RINTU SUITE v8.0 LOADED');
 </script>
 </body>
