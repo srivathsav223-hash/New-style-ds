@@ -1,11 +1,11 @@
 {
   "name": "rintu-domination-suite",
   "version": "6.0.0",
-  "description": "RINTU ULTIMATE DOMINATION SUITE",
+  "description": "RINTU DOMINATION SUITE - Complete Discord Selfbot with Dashboard",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "build": "npm install"
+    "dev": "nodemon app.js"
   },
   "dependencies": {
     "discord.js-selfbot-v13": "^3.5.1",
