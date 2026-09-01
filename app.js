@@ -1,9 +1,6 @@
 console.log('👑 RINTU SUITE v7.0 STARTING...');
 
-// ─── CRITICAL: Load dotenv FIRST ───
 require('dotenv').config();
-
-// ─── IMPORTS ───
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -13,26 +10,23 @@ const crypto = require('crypto');
 
 console.log('[BOOT] Dependencies loaded');
 
-// ─── SIMPLE TOKEN STORAGE ───
+// ─── STORAGE ───
 const TOKEN_FILE = path.join(__dirname, 'tokens.json');
 const KEYS_FILE = path.join(__dirname, 'keys.json');
 
 let tokens = [];
 let keys = [];
 
-// Load tokens
 function loadTokens() {
     try {
         if (fs.existsSync(TOKEN_FILE)) {
-            const data = fs.readFileSync(TOKEN_FILE, 'utf8');
-            tokens = JSON.parse(data);
+            tokens = JSON.parse(fs.readFileSync(TOKEN_FILE, 'utf8'));
             console.log('[TOKENS] Loaded', tokens.length);
         } else {
             tokens = [];
             fs.writeFileSync(TOKEN_FILE, JSON.stringify([]));
         }
     } catch (e) {
-        console.log('[TOKENS] Error:', e.message);
         tokens = [];
     }
     return tokens;
@@ -41,9 +35,7 @@ function loadTokens() {
 function saveTokens() {
     try {
         fs.writeFileSync(TOKEN_FILE, JSON.stringify(tokens, null, 2));
-    } catch (e) {
-        console.log('[TOKENS] Save error:', e.message);
-    }
+    } catch (e) {}
 }
 
 function addToken(token, owner = 'default') {
@@ -86,12 +78,10 @@ function getEnabledTokens() {
     return tokens.filter(t => t.enabled === true);
 }
 
-// Load keys
 function loadKeys() {
     try {
         if (fs.existsSync(KEYS_FILE)) {
-            const data = fs.readFileSync(KEYS_FILE, 'utf8');
-            keys = JSON.parse(data);
+            keys = JSON.parse(fs.readFileSync(KEYS_FILE, 'utf8'));
             console.log('[KEYS] Loaded', keys.length);
         } else {
             keys = [];
@@ -128,24 +118,49 @@ function validateKey(key) {
 loadTokens();
 loadKeys();
 
-// ─── EXPRESS SETUP ───
+// ─── TRY LOADING SELFBOT MODULES ───
+let Client, joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, StreamType;
+let youtubedl, axios;
+let selfbotLoaded = false;
+
+try {
+    console.log('[BOOT] Loading Discord modules...');
+    const discord = require('discord.js-selfbot-v13');
+    Client = discord.Client;
+    console.log('[BOOT] ✅ discord.js-selfbot-v13 loaded');
+    
+    const voice = require('@discordjs/voice');
+    joinVoiceChannel = voice.joinVoiceChannel;
+    createAudioPlayer = voice.createAudioPlayer;
+    createAudioResource = voice.createAudioResource;
+    AudioPlayerStatus = voice.AudioPlayerStatus;
+    StreamType = voice.StreamType;
+    console.log('[BOOT] ✅ @discordjs/voice loaded');
+    
+    youtubedl = require('youtube-dl-exec');
+    axios = require('axios');
+    console.log('[BOOT] ✅ youtube-dl-exec loaded');
+    
+    selfbotLoaded = true;
+} catch (e) {
+    console.log('[BOOT] ⚠️ Selfbot modules not loaded:', e.message);
+    console.log('[BOOT] ⚠️ VC Join will not work');
+    selfbotLoaded = false;
+}
+
+// ─── EXPRESS ───
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, { 
+const io = socketIo(server, {
     cors: { origin: "*" },
     transports: ['websocket', 'polling']
 });
 
-console.log('[BOOT] Express setup');
-
-// ─── VIEW ENGINE ───
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Create views folder if missing
 const viewsPath = path.join(__dirname, 'views');
 if (!fs.existsSync(viewsPath)) {
-    console.log('[BOOT] Creating views folder...');
     fs.mkdirSync(viewsPath, { recursive: true });
 }
 
@@ -154,29 +169,42 @@ app.use(express.urlencoded({ extended: true }));
 
 let admin = false;
 
+// ─── SELFBOT GLOBALS ───
+const clients = [];
+const connections = new Map();
+const players = new Map();
+const activeResources = new Map();
+let currentFFmpegProcess = null;
+let currentUrl = null;
+let currentTitle = "Unknown";
+let volume = 1.0;
+let loopMode = false;
+let bassBoost = false;
+let blastMode = false;
+let dominationMode = false;
+let dominationInterval = null;
+let spamActive = false;
+let spamInterval = null;
+
 // ─── ROUTES ───
 app.get('/', (req, res) => {
     try {
         res.render('dashboard', {
             tokenCount: tokens.length,
             enabledCount: getEnabledTokens().length,
-            onlineCount: clients.filter(c => c?.user).length || 0,
             keyCount: keys.length,
-            domination: dominationMode || false,
-            spam: spamActive || false,
-            volume: Math.round(volume * 100) || 100,
-            connected: connections.size || 0,
-            admin: admin
+            onlineCount: selfbotLoaded ? clients.filter(c => c?.user).length : 0,
+            connectedCount: selfbotLoaded ? connections.size : 0,
+            admin: admin,
+            selfbotLoaded: selfbotLoaded
         });
     } catch (err) {
-        console.log('[ROUTE] Error:', err.message);
         res.send(`
             <html>
                 <body style="background:#0a0a0a;color:#00ff41;font-family:monospace;padding:40px;">
                     <h1 style="color:#ff0040;">👑 RINTU SUITE</h1>
                     <p>✅ Server is running!</p>
                     <p>Error: ${err.message}</p>
-                    <p>Make sure views/dashboard.ejs exists!</p>
                 </body>
             </html>
         `);
@@ -184,17 +212,18 @@ app.get('/', (req, res) => {
 });
 
 app.get('/test', (req, res) => {
-    res.json({ 
-        status: 'alive', 
+    res.json({
+        status: 'alive',
         time: new Date().toISOString(),
         tokens: tokens.length,
-        keys: keys.length
+        keys: keys.length,
+        selfbotLoaded: selfbotLoaded,
+        botsOnline: selfbotLoaded ? clients.filter(c => c?.user).length : 0
     });
 });
 
 app.post('/api/login', (req, res) => {
-    const { password } = req.body;
-    if (password === process.env.ADMIN_PASS) {
+    if (req.body.password === process.env.ADMIN_PASS) {
         admin = true;
         res.json({ success: true });
     } else {
@@ -239,6 +268,7 @@ app.post('/api/tokens/toggle', (req, res) => {
 
 app.post('/api/tokens/start', async (req, res) => {
     if (!admin) return res.status(401).json({ error: 'Unauthorized' });
+    if (!selfbotLoaded) return res.status(400).json({ error: 'Selfbot modules not loaded' });
     await startBots();
     res.json({ success: true });
 });
@@ -285,45 +315,52 @@ app.post('/api/keys/validate', (req, res) => {
     res.json(result);
 });
 
-// ─── COMMAND API ───
+// ─── SELFBOT COMMANDS (ONLY IF LOADED) ───
 app.post('/api/joinvc', async (req, res) => {
     if (!admin) return res.status(401).json({ error: 'Unauthorized' });
+    if (!selfbotLoaded) return res.status(400).json({ error: 'Selfbot not loaded' });
     await joinVoiceChannel(req.body.channelId);
     res.json({ success: true });
 });
 
 app.post('/api/sjoin', async (req, res) => {
     if (!admin) return res.status(401).json({ error: 'Unauthorized' });
+    if (!selfbotLoaded) return res.status(400).json({ error: 'Selfbot not loaded' });
     await joinServer(req.body.invite);
     res.json({ success: true });
 });
 
 app.post('/api/sleave', async (req, res) => {
     if (!admin) return res.status(401).json({ error: 'Unauthorized' });
+    if (!selfbotLoaded) return res.status(400).json({ error: 'Selfbot not loaded' });
     await leaveServer(req.body.serverId);
     res.json({ success: true });
 });
 
 app.post('/api/sleaveall', async (req, res) => {
     if (!admin) return res.status(401).json({ error: 'Unauthorized' });
+    if (!selfbotLoaded) return res.status(400).json({ error: 'Selfbot not loaded' });
     await leaveAllServers();
     res.json({ success: true });
 });
 
 app.post('/api/name', async (req, res) => {
     if (!admin) return res.status(401).json({ error: 'Unauthorized' });
+    if (!selfbotLoaded) return res.status(400).json({ error: 'Selfbot not loaded' });
     await changeNames(req.body.name);
     res.json({ success: true });
 });
 
 app.post('/api/ssend', async (req, res) => {
     if (!admin) return res.status(401).json({ error: 'Unauthorized' });
+    if (!selfbotLoaded) return res.status(400).json({ error: 'Selfbot not loaded' });
     await sendMessage(req.body.channelId, req.body.message);
     res.json({ success: true });
 });
 
 app.post('/api/spam/start', async (req, res) => {
     if (!admin) return res.status(401).json({ error: 'Unauthorized' });
+    if (!selfbotLoaded) return res.status(400).json({ error: 'Selfbot not loaded' });
     await startSpam(req.body.channelId, req.body.messages, req.body.delay);
     res.json({ success: true });
 });
@@ -336,6 +373,7 @@ app.post('/api/spam/stop', (req, res) => {
 
 app.post('/api/domination/start', async (req, res) => {
     if (!admin) return res.status(401).json({ error: 'Unauthorized' });
+    if (!selfbotLoaded) return res.status(400).json({ error: 'Selfbot not loaded' });
     await startDomination(req.body.channelId);
     res.json({ success: true });
 });
@@ -348,12 +386,14 @@ app.post('/api/domination/stop', (req, res) => {
 
 app.post('/api/play', async (req, res) => {
     if (!admin) return res.status(401).json({ error: 'Unauthorized' });
+    if (!selfbotLoaded) return res.status(400).json({ error: 'Selfbot not loaded' });
     await playAudio(req.body.url);
     res.json({ success: true });
 });
 
 app.post('/api/control', (req, res) => {
     if (!admin) return res.status(401).json({ error: 'Unauthorized' });
+    if (!selfbotLoaded) return res.status(400).json({ error: 'Selfbot not loaded' });
     const { action } = req.body;
     if (action === 'pause') players.forEach(p => p.pause());
     if (action === 'resume') players.forEach(p => p.unpause());
@@ -377,12 +417,10 @@ app.get('/api/stats', (req, res) => {
     res.json({
         tokens: tokens.length,
         enabled: getEnabledTokens().length,
-        online: clients.filter(c => c?.user).length,
         keys: keys.length,
-        domination: dominationMode,
-        spam: spamActive,
-        volume: Math.round(volume * 100),
-        connected: connections.size
+        online: selfbotLoaded ? clients.filter(c => c?.user).length : 0,
+        connected: selfbotLoaded ? connections.size : 0,
+        selfbotLoaded: selfbotLoaded
     });
 });
 
@@ -392,40 +430,20 @@ io.on('connection', (socket) => {
     socket.emit('stats', {
         tokens: tokens.length,
         enabled: getEnabledTokens().length,
-        online: clients.filter(c => c?.user).length,
-        keys: keys.length
+        keys: keys.length,
+        online: selfbotLoaded ? clients.filter(c => c?.user).length : 0,
+        connected: selfbotLoaded ? connections.size : 0,
+        selfbotLoaded: selfbotLoaded
     });
 });
 
-// ─── DISCORD SELFBOT ───
-console.log('[BOOT] Loading Discord modules...');
-
-const { Client } = require("discord.js-selfbot-v13");
-const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, StreamType } = require("@discordjs/voice");
-const { spawn } = require("child_process");
-const youtubedl = require("youtube-dl-exec");
-const axios = require("axios");
-
-console.log('[BOOT] Discord modules loaded');
-
-const clients = [];
-const connections = new Map();
-const players = new Map();
-const activeResources = new Map();
-let currentFFmpegProcess = null;
-let currentUrl = null;
-let currentTitle = "Unknown";
-let volume = 1.0;
-let loopMode = false;
-let bassBoost = false;
-let blastMode = false;
-let dominationMode = false;
-let dominationInterval = null;
-let spamActive = false;
-let spamInterval = null;
-
-// ─── START BOTS ───
+// ─── SELFBOT FUNCTIONS (ONLY IF LOADED) ───
 async function startBots() {
+    if (!selfbotLoaded) {
+        console.log('[BOTS] ❌ Selfbot modules not loaded');
+        return;
+    }
+    
     const enabled = getEnabledTokens();
     console.log('[BOTS] Starting', enabled.length, 'bots');
     
@@ -469,16 +487,21 @@ async function stopBots() {
     connections.clear();
     players.clear();
     activeResources.clear();
-    io.emit('stats', { online: 0 });
+    io.emit('stats', { online: 0, connected: 0 });
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // ─── JOIN VC ───
 async function joinVoiceChannel(channelId) {
+    if (!selfbotLoaded) {
+        io.emit('command_result', { command: 'joinvc', result: '❌ Selfbot not loaded' });
+        return;
+    }
+    
     const online = clients.filter(c => c?.user);
     if (online.length === 0) {
-        io.emit('command_result', { command: 'joinvc', result: '❌ No bots online!' });
+        io.emit('command_result', { command: 'joinvc', result: '❌ No bots online! Start tokens first.' });
         return;
     }
     
@@ -514,6 +537,11 @@ async function joinVoiceChannel(channelId) {
 
 // ─── SJOIN ───
 async function joinServer(inviteInput) {
+    if (!selfbotLoaded) {
+        io.emit('command_result', { command: 'sjoin', result: '❌ Selfbot not loaded' });
+        return;
+    }
+    
     const online = clients.filter(c => c?.user);
     if (online.length === 0) {
         io.emit('command_result', { command: 'sjoin', result: '❌ No bots online!' });
@@ -544,6 +572,11 @@ async function joinServer(inviteInput) {
 
 // ─── SLEAVE ───
 async function leaveServer(serverId) {
+    if (!selfbotLoaded) {
+        io.emit('command_result', { command: 'sleave', result: '❌ Selfbot not loaded' });
+        return;
+    }
+    
     let left = 0;
     for (const client of clients) {
         if (!client?.user) continue;
@@ -557,6 +590,11 @@ async function leaveServer(serverId) {
 }
 
 async function leaveAllServers() {
+    if (!selfbotLoaded) {
+        io.emit('command_result', { command: 'sleaveall', result: '❌ Selfbot not loaded' });
+        return;
+    }
+    
     let total = 0;
     for (const client of clients) {
         if (!client?.user) continue;
@@ -573,6 +611,11 @@ async function leaveAllServers() {
 
 // ─── NAME CHANGE ───
 async function changeNames(name) {
+    if (!selfbotLoaded) {
+        io.emit('command_result', { command: 'name', result: '❌ Selfbot not loaded' });
+        return;
+    }
+    
     let changed = 0;
     for (const client of clients) {
         if (!client?.user) continue;
@@ -587,6 +630,11 @@ async function changeNames(name) {
 
 // ─── SEND MESSAGE ───
 async function sendMessage(channelId, message) {
+    if (!selfbotLoaded) {
+        io.emit('command_result', { command: 'ssend', result: '❌ Selfbot not loaded' });
+        return;
+    }
+    
     let sent = 0;
     for (const client of clients) {
         if (!client?.user) continue;
@@ -601,6 +649,11 @@ async function sendMessage(channelId, message) {
 
 // ─── SPAM ───
 async function startSpam(channelId, messages, delay) {
+    if (!selfbotLoaded) {
+        io.emit('command_result', { command: 'spam', result: '❌ Selfbot not loaded' });
+        return;
+    }
+    
     if (spamActive) return;
     spamActive = true;
     const msgList = messages.split('|').map(m => m.trim());
@@ -633,6 +686,11 @@ function stopSpam() {
 
 // ─── DOMINATION ───
 async function startDomination(channelId) {
+    if (!selfbotLoaded) {
+        io.emit('command_result', { command: 'dominate', result: '❌ Selfbot not loaded' });
+        return;
+    }
+    
     if (dominationMode) return;
     dominationMode = true;
     
@@ -672,6 +730,11 @@ function stopDomination() {
 
 // ─── PLAY AUDIO ───
 async function playAudio(url) {
+    if (!selfbotLoaded) {
+        io.emit('command_result', { command: 'play', result: '❌ Selfbot not loaded' });
+        return;
+    }
+    
     if (connections.size === 0) {
         io.emit('command_result', { command: 'play', result: '❌ Join VC first!' });
         return;
@@ -708,7 +771,7 @@ function startFFmpegStream(input) {
     
     const filterStr = filters.length ? filters.join(',') : 'highpass=f=60';
     
-    currentFFmpegProcess = spawn("ffmpeg", [
+    currentFFmpegProcess = require('child_process').spawn("ffmpeg", [
         "-reconnect", "1", "-reconnect_streamed", "1",
         "-i", input,
         "-filter:a", filterStr,
@@ -738,24 +801,29 @@ function stopFFmpeg() {
     }
 }
 
-// ─── START SERVER ───
+// ─── START ───
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`
 ╔══════════════════════════════════════════════════════════════╗
 ║              👑 RINTU SUITE v7.0 👑                        ║
-║           🔥 DEPLOYED SUCCESSFULLY                         ║
+║           🔥 WITH VC JOIN SUPPORT                          ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  📦 Tokens: ${tokens.length}                                ║
 ║  ✅ Enabled: ${getEnabledTokens().length}                  ║
 ║  🔑 Keys: ${keys.length}                                   ║
+║  🤖 Selfbot: ${selfbotLoaded ? '✅ LOADED' : '❌ NOT LOADED'} ║
 ║  🌐 http://localhost:${PORT}                                ║
 ║  🔑 Admin: ${process.env.ADMIN_PASS || 'RINTU_2026'}       ║
 ╚══════════════════════════════════════════════════════════════╝
     `);
+    
+    if (selfbotLoaded && getEnabledTokens().length > 0) {
+        console.log('[🚀 AUTO-START] Launching bots...');
+        startBots();
+    }
 });
 
-// ─── CLEANUP ───
 process.on('SIGINT', async () => {
     console.log('[SHUTDOWN] Cleaning up...');
     await stopBots();
