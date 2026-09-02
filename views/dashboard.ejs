@@ -3,46 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>👑 RINTU VC BOT</title>
+    <title>👑 RINTU VC DASHBOARD</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #0a0a0a; color: #00ffc8; font-family: 'Rajdhani', sans-serif; min-height: 100vh; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { text-align: center; padding: 20px 0; }
-        .header h1 { font-family: 'Orbitron', monospace; font-size: 2.5rem; background: linear-gradient(135deg, #00ffc8, #ff0040, #ff8800); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .header .sub { color: #666; letter-spacing: 4px; font-size: 0.8rem; }
-        .glass { background: rgba(10,10,10,0.8); backdrop-filter: blur(12px); border: 1px solid rgba(0,255,200,0.1); border-radius: 12px; padding: 15px; margin: 10px 0; }
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .stat { background: rgba(0,255,200,0.03); border-radius: 10px; padding: 12px; text-align: center; border: 1px solid rgba(0,255,200,0.06); }
-        .stat .label { color: #666; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; }
-        .stat .value { font-size: 1.8rem; font-weight: 700; font-family: 'Orbitron', monospace; background: linear-gradient(135deg, #00ffc8, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .stat .value.gold { background: linear-gradient(135deg, #ff8800, #ffcc00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; padding: 30px 0; }
+        .header h1 { font-family: 'Orbitron', monospace; font-size: 3.5rem; background: linear-gradient(135deg, #00ffc8, #ff0040, #ff8800); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: shift 3s ease-in-out infinite; background-size: 300% 300%; }
+        @keyframes shift { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+        .header .sub { color: #666; letter-spacing: 6px; font-size: 1rem; }
+        .glass { background: rgba(10,10,10,0.8); backdrop-filter: blur(12px); border: 1px solid rgba(0,255,200,0.1); border-radius: 16px; padding: 20px; margin: 12px 0; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin: 15px 0; }
+        .stat { background: rgba(0,255,200,0.03); border-radius: 12px; padding: 15px 20px; border: 1px solid rgba(0,255,200,0.06); }
+        .stat .label { color: #666; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; }
+        .stat .value { font-size: 2rem; font-weight: 700; font-family: 'Orbitron', monospace; background: linear-gradient(135deg, #00ffc8, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .stat .value.danger { background: linear-gradient(135deg, #ff0040, #ff4400); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat .value.gold { background: linear-gradient(135deg, #ff8800, #ffcc00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .login-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.97); display: flex; justify-content: center; align-items: center; z-index: 999; }
-        .login-box { background: rgba(10,10,10,0.9); border: 2px solid rgba(0,255,200,0.2); border-radius: 16px; padding: 30px 25px; width: 90%; max-width: 360px; text-align: center; }
-        .login-box h2 { font-family: 'Orbitron', monospace; font-size: 2rem; background: linear-gradient(135deg, #ff0040, #ff8800); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .login-box input { background: rgba(0,0,0,0.6); color: #00ffc8; border: 1px solid rgba(0,255,200,0.15); padding: 12px; width: 100%; border-radius: 8px; font-size: 1rem; margin: 10px 0; font-family: 'Rajdhani', sans-serif; outline: none; }
+        .login-box { background: rgba(10,10,10,0.9); border: 2px solid rgba(0,255,200,0.2); border-radius: 20px; padding: 50px 40px; min-width: 360px; text-align: center; }
+        .login-box h2 { font-family: 'Orbitron', monospace; font-size: 2.5rem; background: linear-gradient(135deg, #ff0040, #ff8800); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .login-box input { background: rgba(0,0,0,0.6); color: #00ffc8; border: 1px solid rgba(0,255,200,0.15); padding: 14px; width: 100%; border-radius: 10px; font-size: 1rem; margin: 10px 0; font-family: 'Rajdhani', sans-serif; outline: none; }
         .login-box input:focus { border-color: rgba(0,255,200,0.5); }
-        .login-box button { background: linear-gradient(135deg, #ff0040, #ff4400); color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; width: 100%; font-family: 'Rajdhani', sans-serif; }
-        .btn { background: rgba(0,255,200,0.08); color: #00ffc8; border: 1px solid rgba(0,255,200,0.15); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 0.7rem; text-transform: uppercase; }
+        .login-box button { background: linear-gradient(135deg, #ff0040, #ff4400); color: #fff; border: none; padding: 14px; border-radius: 10px; font-weight: 700; font-size: 1.1rem; cursor: pointer; width: 100%; font-family: 'Rajdhani', sans-serif; transition: 0.3s; }
+        .login-box button:hover { transform: scale(1.02); }
+        .btn { background: rgba(0,255,200,0.08); color: #00ffc8; border: 1px solid rgba(0,255,200,0.15); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 0.8rem; transition: 0.3s; text-transform: uppercase; }
         .btn:hover { background: rgba(0,255,200,0.15); }
         .btn.danger { border-color: rgba(255,0,64,0.3); color: #ff0040; }
+        .btn.danger:hover { background: rgba(255,0,64,0.15); }
         .btn.primary { border-color: rgba(255,136,0,0.3); color: #ff8800; }
-        .btn.small { padding: 4px 8px; font-size: 0.6rem; }
-        .input-group { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
-        .input-group input { background: rgba(0,0,0,0.5); color: #00ffc8; border: 1px solid rgba(0,255,200,0.1); padding: 8px 12px; border-radius: 6px; font-family: 'Rajdhani', sans-serif; font-size: 0.85rem; outline: none; flex: 1; min-width: 100px; }
-        .token-list { max-height: 200px; overflow-y: auto; margin-top: 8px; }
-        .token-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; border-bottom: 1px solid rgba(0,255,200,0.05); font-size: 0.7rem; flex-wrap: wrap; gap: 4px; }
-        .token-item .t { color: #666; font-family: monospace; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
-        .token-item .status { padding: 2px 10px; border-radius: 10px; font-size: 0.5rem; font-weight: 700; text-transform: uppercase; }
+        .btn.primary:hover { background: rgba(255,136,0,0.15); }
+        .btn.small { padding: 4px 10px; font-size: 0.7rem; }
+        .input-group { display: flex; gap: 10px; flex-wrap: wrap; margin: 8px 0; }
+        .input-group input, .input-group textarea { background: rgba(0,0,0,0.5); color: #00ffc8; border: 1px solid rgba(0,255,200,0.1); padding: 10px 14px; border-radius: 8px; font-family: 'Rajdhani', sans-serif; font-size: 0.9rem; outline: none; flex: 1; min-width: 140px; }
+        .token-list { max-height: 300px; overflow-y: auto; margin-top: 10px; }
+        .token-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid rgba(0,255,200,0.05); font-size: 0.8rem; }
+        .token-item .t { color: #666; font-family: monospace; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+        .token-item .status { padding: 2px 12px; border-radius: 12px; font-size: 0.6rem; font-weight: 700; text-transform: uppercase; }
         .token-item .status.on { background: rgba(0,255,200,0.15); color: #00ffc8; }
         .token-item .status.off { background: rgba(255,0,64,0.15); color: #ff0040; }
-        .flex { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .flex { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
         .hidden { display: none !important; }
-        ::-webkit-scrollbar { width: 3px; background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #00ffc8; border-radius: 3px; }
-        @media (max-width: 480px) { .header h1 { font-size: 1.8rem; } .stat .value { font-size: 1.4rem; } }
+        .cmd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 6px; }
+        .cmd-btn { background: rgba(0,255,200,0.05); border: 1px solid rgba(0,255,200,0.1); color: #00ffc8; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 0.7rem; transition: 0.3s; text-transform: uppercase; }
+        .cmd-btn:hover { background: rgba(0,255,200,0.15); }
+        .cmd-btn.danger { border-color: rgba(255,0,64,0.2); color: #ff0040; }
+        .cmd-btn.primary { border-color: rgba(255,136,0,0.2); color: #ff8800; }
+        #logs { background: rgba(0,0,0,0.4); border-radius: 8px; padding: 10px; max-height: 100px; overflow-y: auto; font-size: 0.7rem; color: #666; font-family: monospace; margin-top: 8px; border: 1px solid rgba(0,255,200,0.05); }
+        ::-webkit-scrollbar { width: 4px; background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #00ffc8; border-radius: 4px; }
+        @media (max-width: 768px) { .header h1 { font-size: 2rem; } .login-box { min-width: 300px; padding: 30px 20px; } }
     </style>
 </head>
 <body>
@@ -50,7 +60,7 @@
 <div id="loginOverlay" class="login-overlay">
     <div class="login-box">
         <h2>👑 RINTU</h2>
-        <div style="color:#666; letter-spacing:3px; font-size:0.8rem; margin:5px 0 15px;">VC BOT</div>
+        <div style="color:#666; letter-spacing:4px; margin:5px 0 20px;">VC DASHBOARD</div>
         <input type="password" id="adminPass" placeholder="Admin Password" onkeydown="if(event.key==='Enter') login()">
         <button onclick="login()">🔓 UNLOCK</button>
     </div>
@@ -59,51 +69,58 @@
 <div id="dashboard" class="container hidden">
     <div class="header">
         <h1>👑 RINTU</h1>
-        <div class="sub">VC BOT</div>
+        <div class="sub">VC DASHBOARD • v11.0</div>
     </div>
 
-    <div class="glass" style="padding:10px 15px;">
+    <div class="glass" style="padding:12px 20px;">
         <div class="flex" style="justify-content:space-between;">
-            <span style="font-size:0.7rem;">📦 <span id="tokenCount">0</span></span>
-            <span style="font-size:0.7rem;">✅ <span id="enabledCount">0</span></span>
-            <span style="font-size:0.7rem;">🤖 <span id="onlineCount">0</span></span>
-            <button class="btn danger small" onclick="logout()">🔒</button>
+            <div class="flex">
+                <span>🤖 <span id="onlineCount">0</span> bots</span>
+                <span>📦 <span id="tokenCount">0</span> tokens</span>
+                <span>🔊 <span id="vcCount">0</span> VC</span>
+            </div>
+            <button class="btn danger small" onclick="logout()">🔒 LOGOUT</button>
         </div>
     </div>
 
     <div class="grid">
-        <div class="stat"><div class="label">📦 Tokens</div><div class="value" id="statTokens">0</div></div>
-        <div class="stat"><div class="label">✅ Enabled</div><div class="value gold" id="statEnabled">0</div></div>
-        <div class="stat"><div class="label">🤖 Online</div><div class="value danger" id="statOnline">0</div></div>
+        <div class="stat"><div class="label">🤖 Online Bots</div><div class="value" id="statBots">0</div></div>
+        <div class="stat"><div class="label">📦 Active Tokens</div><div class="value gold" id="statTokens">0</div></div>
+        <div class="stat"><div class="label">🔊 Voice Connections</div><div class="value" id="statVC">0</div></div>
+        <div class="stat"><div class="label">👑 Domination</div><div class="value danger" id="statDom">OFF</div></div>
+        <div class="stat"><div class="label">💬 Spam</div><div class="value gold" id="statSpam">OFF</div></div>
+        <div class="stat"><div class="label">🔊 Volume</div><div class="value" id="statVolume">100%</div></div>
     </div>
 
     <div class="glass">
         <div class="flex" style="justify-content:space-between;">
-            <h3 style="color:#ff0040; font-size:1rem;">📁 TOKENS</h3>
+            <h2 style="color:#ff0040; font-size:1.2rem;">📁 TOKEN MANAGEMENT</h2>
             <div class="flex">
                 <button class="btn primary small" onclick="startAll()">▶ START</button>
-                <button class="btn danger small" onclick="stopAll()">⏹</button>
-                <button class="btn small" onclick="loadTokens()">🔄</button>
+                <button class="btn danger small" onclick="stopAll()">⏹ STOP</button>
+                <button class="btn small" onclick="loadTokens()">🔄 REFRESH</button>
             </div>
         </div>
         <div class="input-group">
-            <input type="text" id="tokenInput" placeholder="Token" style="flex:2; font-size:0.7rem;">
-            <input type="text" id="ownerInput" placeholder="Owner" style="flex:1; font-size:0.7rem;">
-            <button class="btn primary small" onclick="addToken()">➕</button>
+            <input type="text" id="tokenInput" placeholder="Discord User Token" style="flex:3;">
+            <input type="text" id="ownerInput" placeholder="Owner" style="flex:1;">
+            <button class="btn primary" onclick="addToken()">➕ ADD</button>
         </div>
         <div class="token-list" id="tokenList"></div>
     </div>
 
     <div class="glass" style="border-color:rgba(255,136,0,0.2);">
-        <h3 style="color:#ff8800; font-size:1rem;">🔊 JOIN VC</h3>
+        <div class="flex" style="justify-content:space-between;">
+            <h3 style="color:#ff8800;">🔊 VOICE CHANNEL</h3>
+        </div>
         <div class="input-group">
             <input type="text" id="vcChannel" placeholder="Channel ID" style="flex:2;">
-            <button class="btn primary" onclick="joinVC()">🔊 JOIN</button>
+            <button class="cmd-btn primary" onclick="joinVC()">🔊 JOIN VC</button>
         </div>
-        <div id="vcStatus" style="color:#666; font-size:0.8rem; margin-top:5px;"></div>
+        <div id="vcStatus" style="color:#888; font-size:0.8rem; margin-top:5px;"></div>
     </div>
 
-    <div id="logs" style="background:rgba(0,0,0,0.3); border-radius:6px; padding:8px; max-height:100px; overflow-y:auto; font-size:0.6rem; color:#666; font-family:monospace; border:1px solid rgba(0,255,200,0.05);"></div>
+    <div id="logs"></div>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -136,12 +153,12 @@
         fetch('/api/tokens').then(r => r.json()).then(data => {
             const list = document.getElementById('tokenList');
             if (!data || data.length === 0) {
-                list.innerHTML = '<div style="color:#444; text-align:center; padding:15px;">No tokens.</div>';
+                list.innerHTML = '<div style="color:#444; text-align:center; padding:20px;">No tokens added.</div>';
                 return;
             }
             list.innerHTML = data.map(t => `
                 <div class="token-item">
-                    <span class="t">${t.token ? t.token.substring(0, 15) + '...' : 'Invalid'}</span>
+                    <span class="t">${t.token ? t.token.substring(0, 20) + '...' : 'Invalid'}</span>
                     <span style="color:#888;">${t.owner || 'default'}</span>
                     <span class="status ${t.enabled ? 'on' : 'off'}">${t.enabled ? 'ON' : 'OFF'}</span>
                     <div>
@@ -152,27 +169,25 @@
             `).join('');
             document.getElementById('tokenCount').textContent = data.length;
             document.getElementById('statTokens').textContent = data.length;
-            document.getElementById('statEnabled').textContent = data.filter(t => t.enabled).length;
-            document.getElementById('enabledCount').textContent = data.filter(t => t.enabled).length;
         });
     }
 
     function addToken() {
         const token = document.getElementById('tokenInput').value.trim();
         const owner = document.getElementById('ownerInput').value.trim() || 'default';
-        if (!token) return alert('❌ Enter token!');
-        if (token.length < 10) return alert('❌ Invalid token!');
+        if (!token) return alert('❌ Enter a token!');
+        if (token.length < 10) return alert('❌ Token too short!');
         fetch('/api/tokens/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, owner }) })
         .then(r => r.json()).then(data => {
             if (data.success) {
                 document.getElementById('tokenInput').value = '';
                 loadTokens();
-            } else { alert('❌ Failed'); }
+            } else { alert('❌ Failed to add token'); }
         });
     }
 
     function deleteToken(id) {
-        if (!confirm('Delete?')) return;
+        if (!confirm('Delete this token?')) return;
         fetch('/api/tokens/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
         .then(() => loadTokens());
     }
@@ -184,51 +199,57 @@
 
     function startAll() {
         fetch('/api/tokens/start', { method: 'POST' });
-        document.getElementById('onlineCount').textContent = '⏳';
     }
 
     function stopAll() {
-        if (!confirm('Stop all?')) return;
+        if (!confirm('Stop all bots?')) return;
         fetch('/api/tokens/stop', { method: 'POST' });
-        document.getElementById('onlineCount').textContent = '0';
     }
 
     function joinVC() {
         const channel = document.getElementById('vcChannel').value.trim();
         if (!channel) return alert('❌ Channel ID required!');
-        document.getElementById('vcStatus').textContent = '⏳ Joining...';
+        document.getElementById('vcStatus').textContent = '⏳ Joining VC...';
         fetch('/api/joinvc', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channelId: channel }) })
         .then(r => r.json()).then(data => {
-            if (data.success) { document.getElementById('vcStatus').textContent = '✅ Joined!'; }
+            if (data.success) { document.getElementById('vcStatus').textContent = '✅ VC Join command sent!'; }
             else { document.getElementById('vcStatus').textContent = '❌ Failed'; }
         });
     }
 
     function loadStats() {
         fetch('/api/stats').then(r => r.json()).then(s => {
-            document.getElementById('statTokens').textContent = s.tokens || 0;
-            document.getElementById('statEnabled').textContent = s.enabled || 0;
-            document.getElementById('statOnline').textContent = s.online || 0;
+            document.getElementById('statBots').textContent = s.online || 0;
             document.getElementById('onlineCount').textContent = s.online || 0;
-            document.getElementById('enabledCount').textContent = s.enabled || 0;
+            document.getElementById('statTokens').textContent = s.tokens || 0;
+            document.getElementById('tokenCount').textContent = s.tokens || 0;
         });
     }
 
     socket.on('stats', (data) => {
-        if (data.tokens !== undefined) { document.getElementById('statTokens').textContent = data.tokens; document.getElementById('tokenCount').textContent = data.tokens; }
-        if (data.enabled !== undefined) { document.getElementById('statEnabled').textContent = data.enabled; document.getElementById('enabledCount').textContent = data.enabled; }
-        if (data.online !== undefined) { document.getElementById('statOnline').textContent = data.online; document.getElementById('onlineCount').textContent = data.online; }
+        if (data.online !== undefined) {
+            document.getElementById('statBots').textContent = data.online;
+            document.getElementById('onlineCount').textContent = data.online;
+        }
+        if (data.tokens !== undefined) {
+            document.getElementById('statTokens').textContent = data.tokens;
+            document.getElementById('tokenCount').textContent = data.tokens;
+        }
+        if (data.connected !== undefined) {
+            document.getElementById('statVC').textContent = data.connected;
+            document.getElementById('vcCount').textContent = data.connected;
+        }
     });
 
     socket.on('log', (data) => {
         const logs = document.getElementById('logs');
         logs.innerHTML += `<div>[${data.time}] ${data.message}</div>`;
         logs.scrollTop = logs.scrollHeight;
-        if (logs.children.length > 30) { logs.removeChild(logs.firstChild); }
+        if (logs.children.length > 50) { logs.removeChild(logs.firstChild); }
     });
 
     document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && document.activeElement.id === 'adminPass') login(); });
-    console.log('👑 RINTU VC BOT LOADED');
+    console.log('👑 RINTU VC DASHBOARD LOADED');
 </script>
 </body>
 </html>
