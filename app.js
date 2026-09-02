@@ -1,4 +1,4 @@
-console.log('👑 RINTU VC BOT - RENDER');
+console.log('👑 RINTU VC DASHBOARD v11.0');
 console.log('📌 Node version:', process.version);
 
 require('dotenv').config();
@@ -26,6 +26,7 @@ console.log('[✅] Modules loaded');
 // ─── TOKEN STORAGE ───
 const TOKEN_FILE = path.join(__dirname, 'tokens.json');
 let tokens = [];
+let logs = [];
 
 function loadTokens() {
     try {
@@ -103,6 +104,7 @@ async function stealthLogin(token, index) {
         client.on('ready', () => {
             console.log(`[✅] ${client.user?.tag || 'Unknown'} online`);
             io.emit('stats', { online: clients.filter(c => c?.user).length });
+            addLog(`✅ ${client.user?.tag || 'Unknown'} online`);
         });
 
         client.on('error', (e) => {
@@ -114,6 +116,7 @@ async function stealthLogin(token, index) {
         return client;
     } catch (err) {
         console.log(`[❌] Login failed: ${err.message}`);
+        addLog(`❌ Login failed: ${err.message}`);
         return null;
     }
 }
@@ -126,7 +129,7 @@ async function startBots() {
     console.log('[🚀] Starting', enabled.length, 'bots');
 
     if (enabled.length === 0) {
-        console.log('[❌] No enabled tokens!');
+        addLog('❌ No enabled tokens!');
         isBotStarting = false;
         return;
     }
@@ -146,6 +149,7 @@ async function startBots() {
 
     isBotStarting = false;
     console.log('[🚀] ✅', success, '/', enabled.length, 'online');
+    addLog(`✅ ${success}/${enabled.length} bots online`);
     io.emit('stats', { online: clients.filter(c => c?.user).length });
 }
 
@@ -155,6 +159,7 @@ async function stopBots() {
         try { await c.destroy(); } catch(e) {}
     }
     clients.length = 0;
+    addLog('🛑 All bots stopped');
     io.emit('stats', { online: 0 });
 }
 
@@ -164,8 +169,7 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 async function joinVoiceChannel(channelId) {
     const online = clients.filter(c => c?.user);
     if (online.length === 0) {
-        console.log('[❌] No bots online!');
-        io.emit('log', { time: new Date().toLocaleTimeString(), message: '❌ No bots online!' });
+        addLog('❌ No bots online! Start tokens first.');
         return;
     }
 
@@ -174,7 +178,10 @@ async function joinVoiceChannel(channelId) {
         const client = online[i];
         try {
             const channel = await client.channels.fetch(channelId);
-            if (!channel) continue;
+            if (!channel) {
+                addLog(`❌ Bot ${i+1}: Channel not found`);
+                continue;
+            }
 
             const conn = joinVoiceChannel({
                 channelId: channel.id,
@@ -189,11 +196,19 @@ async function joinVoiceChannel(channelId) {
             console.log(`[✅] Bot ${i+1} joined VC`);
         } catch (e) {
             console.log('[❌] VC error:', e.message);
+            addLog(`❌ Bot ${i+1}: ${e.message}`);
         }
         await sleep(1000);
     }
+    addLog(`✅ ${connected}/${online.length} joined VC`);
     io.emit('stats', { connected });
-    console.log(`[✅] ${connected}/${online.length} joined VC`);
+}
+
+function addLog(msg) {
+    const time = new Date().toLocaleTimeString();
+    logs.unshift({ time, message: msg });
+    if (logs.length > 50) logs.pop();
+    io.emit('log', { time, message: msg });
 }
 
 // ─── EXPRESS ───
@@ -225,10 +240,11 @@ app.get('/', (req, res) => {
             enabledCount: getEnabledTokens().length,
             onlineCount: clients.filter(c => c?.user).length,
             connectedCount: 0,
-            admin: admin
+            admin: admin,
+            logs: logs.slice(0, 20)
         });
     } catch (err) {
-        res.send(`<h1 style="color:#ff0040;">👑 RINTU VC BOT</h1><p>✅ Running! Error: ${err.message}</p>`);
+        res.send(`<h1 style="color:#ff0040;">👑 RINTU</h1><p>✅ Running! Error: ${err.message}</p>`);
     }
 });
 
@@ -262,6 +278,7 @@ app.post('/api/tokens/add', (req, res) => {
     if (!token) return res.status(400).json({ error: 'Token required' });
     const result = addToken(token, owner);
     if (result) {
+        addLog(`📁 Token added: ${owner || 'default'}`);
         res.json({ success: true, token: result });
     } else {
         res.status(400).json({ error: 'Invalid token' });
@@ -271,6 +288,7 @@ app.post('/api/tokens/add', (req, res) => {
 app.post('/api/tokens/delete', (req, res) => {
     if (!admin) return res.status(401).json({ error: 'Unauthorized' });
     deleteToken(req.body.id);
+    addLog('🗑️ Token deleted');
     res.json({ success: true });
 });
 
@@ -290,6 +308,20 @@ app.post('/api/tokens/stop', async (req, res) => {
     if (!admin) return res.status(401).json({ error: 'Unauthorized' });
     await stopBots();
     res.json({ success: true });
+});
+
+app.post('/api/tokens/bulk', (req, res) => {
+    if (!admin) return res.status(401).json({ error: 'Unauthorized' });
+    const { tokens: tokenList, owner } = req.body;
+    if (!tokenList || !Array.isArray(tokenList)) {
+        return res.status(400).json({ error: 'Tokens array required' });
+    }
+    let added = 0;
+    tokenList.forEach(t => {
+        if (t && t.length > 10) { addToken(t, owner || 'bulk'); added++; }
+    });
+    addLog(`📦 Bulk added ${added} tokens`);
+    res.json({ success: true, added, total: tokenList.length });
 });
 
 // ─── VC JOIN API ───
@@ -318,6 +350,7 @@ io.on('connection', (socket) => {
         enabled: getEnabledTokens().length,
         online: clients.filter(c => c?.user).length
     });
+    socket.emit('logs', logs.slice(0, 20));
 });
 
 // ─── START ───
@@ -325,14 +358,13 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`
 ╔══════════════════════════════════════════════════════════════╗
-║           👑 RINTU VC BOT - RENDER 👑                      ║
-║           🔥 VC JOIN + TOKENS ONLY                         ║
+║           👑 RINTU VC DASHBOARD 👑                         ║
+║           🔥 TOKENS + VC JOIN                              ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  📦 Tokens: ${tokens.length}                                ║
 ║  ✅ Enabled: ${getEnabledTokens().length}                  ║
-║  🌐 Dashboard: https://your-app.onrender.com               ║
+║  🌐 Dashboard: http://localhost:${PORT}                     ║
 ║  🔑 Admin: ${process.env.ADMIN_PASS || 'RINTU_2026'}       ║
-║  📌 Node v16 REQUIRED                                      ║
 ╚══════════════════════════════════════════════════════════════╝
     `);
 
